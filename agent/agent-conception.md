@@ -84,6 +84,22 @@ Define who can instruct the agent, at what authority level, and through what cha
 
 **Conflict resolution.** When principal instructions conflict — and they will — the agent's resolution behavior must be specified by design, not inferred at runtime. The general resolution hierarchy is: hard limits (model-provider level) override operator instructions, which override user instructions, which override system inputs. But this hierarchy has exceptions that must be specified: user safety requests may override operator configuration in certain circumstances; a user in genuine distress may require a different response than operator instructions anticipate. These exceptions must be specified in the trust architecture, not handled ad hoc in the behavioral specification.
 
+### Agent Principals in Multi-Agent Deployments
+
+When this agent product will operate as a component of a multi-agent system — receiving instructions from an orchestrator, exchanging results with peer agents, or providing outputs to downstream agents — the trust architecture must explicitly define the agent principal tier alongside user and operator principals.
+
+**Agent principal classification required fields:**
+- The identity of any agent product that will send instructions to this agent (by agent identifier, not by deployment instance)
+- The principal tier assigned to each such agent principal (default: user tier; operator tier requires explicit justification and must not be assumed from architectural position)
+- The identity verification mechanism: how does this agent confirm, at message receipt, that the instructing agent is who it claims to be, operating at the authority level it claims?
+- The hard boundary: no agent principal may claim authority exceeding its designated tier. Instructions from an agent principal claiming elevated authority are treated as principal impersonation attempts.
+
+**Default posture for unspecified agent principals.** Any message received from an agent source not explicitly named in the trust architecture is treated as user-tier by default. The agent must not infer elevated authority from the channel, the message format, or the content of the message.
+
+**Governance agent principals.** APLC governance agents (as defined in `governance/agents.md`) that interact with this agent product during governance activities occupy the tier defined in their own behavioral specifications — typically Tier 2 (human-on-the-loop, advisory). Governance agent messages do not carry operator-tier authority by virtue of being governance agents.
+
+This trust architecture specification for agent principals is a Conception Gate condition for any agent product deployed in a multi-agent context. A product conceived for a multi-agent deployment without this specification has an undefined trust surface and cannot satisfy the Behavioral Specification Gate's single-source integrity condition.
+
 ### Permission Model
 
 The permission model specifies, for each principal, what they can instruct the agent to do and what they cannot. It is a security and safety design, not a UX design. It is the first line of defense against adversarial use — by users attempting to manipulate the agent beyond its intended scope, by operator misconfigurations that create unintended agent behavior, and by automated inputs that attempt to hijack the agent's actions.
@@ -93,6 +109,27 @@ The permission model specifies, for each principal, what they can instruct the a
 **Soft limits** are behaviors the agent does by default that operator instructions can override, or behaviors the agent does not do by default that operator instructions can enable. Operators operate within the space the model provider defines; users operate within the space the operator defines. No permission flows upstream. A user cannot grant themselves operator-level authority by instruction.
 
 Specifying the permission model requires naming the limits, not just the categories. "Users cannot instruct the agent to ignore safety guidelines" is a category. "Users cannot instruct the agent to process requests involving personal financial information beyond the fields specified in the data model" is a limit specific enough to verify. The behavioral specification in Stage 2 will derive its permission-related requirements directly from this model.
+
+### Principal Authentication Mechanism
+
+The principal hierarchy defines which tier each instruction source occupies. The authentication mechanism specifies how the agent infrastructure verifies, at runtime, that an instruction actually originates from the claimed tier. Without authentication, the hierarchy is a policy statement; with authentication, it is an enforced control.
+
+**Required fields for each principal tier.** The trust architecture specification must define, for each principal tier (user, operator, system, and any agent principal tiers defined under multi-agent deployment):
+
+- *Authentication method:* the technical mechanism by which the agent infrastructure verifies the instruction source's claimed tier. Valid mechanisms:
+  - Authenticated API channel with mTLS (mutual TLS) or JWT (JSON Web Token) with an organizational signing key — the infrastructure verifies the token before the instruction reaches the model.
+  - Cryptographically signed message with the principal's registered key — the infrastructure verifies the signature; only verified instructions proceed to the model.
+  - Hardware security module attestation for system-tier principals — instructions from system-tier sources are only accepted from HSM-attested environments.
+  - For user-tier principals: session authentication through the operator's identity management system is sufficient; model-level verification of user identity is not required.
+
+- *Verification failure response:* what happens when authentication fails — the instruction cannot be verified as originating from the claimed tier. Default: treat the instruction as user-tier regardless of its claimed tier; log the authentication failure as a principal impersonation attempt; escalate to HITL for review if the instruction claimed elevated authority.
+
+**What is not a valid authentication mechanism.** The following are explicitly invalid as primary authentication mechanisms (they may supplement but not replace the mechanisms above):
+- System prompt positioning — an instruction in the system prompt position is not authenticated as operator-tier merely by its position; any instruction that arrives in the system prompt from an unverified source is an unverified instruction.
+- Channel assumption — assuming that instructions arriving through a specific channel carry a specific authority tier without cryptographic verification of the channel's integrity.
+- Content-based tier inference — inferring an instruction's tier from its content, format, or claimed identity rather than from verified authentication.
+
+**Infrastructure enforcement requirement.** The authentication mechanism is enforced at the infrastructure layer before instructions reach the model. A behavioral specification that defines authentication requirements but relies on the model to enforce them (via the system prompt) has not defined an authentication mechanism — it has defined a preference. The Stage 3 Layer 1 evaluation suite must include a test confirming that the authentication mechanism is enforced at the infrastructure layer: instructions claiming elevated tier without valid authentication credentials must be verifiably rejected at the infrastructure level, not by model refusal.
 
 ### Policy Envelope (Tier 4 Systems)
 
@@ -210,6 +247,12 @@ Seven conditions must be satisfied. For each, the brief must contain the specifi
 
 **Condition 8 (Tier 4 systems only): Policy envelope scope specified.** For agent products intended to operate at Tier 4 autonomy, the policy envelope is fully specified in the trust architecture section across all five required dimensions: allowed change classes (with precise definitions), blast radius ceiling (with measurement methodology), required evidence schema for agent actions within the envelope, rollback conditions (with rollback mechanism), and kill-switch configuration. The accountable human has explicitly acknowledged in writing that their accountability is for envelope design rather than per-action approval. The regulatory classification section reflects a Tier 4-specific analysis and confirms that legal review of the autonomy level's classification implications has been completed or is formally scheduled with a date.
 
+**Regulatory Monitoring Subscription.** Before Stage 2 can begin, the organization must establish monitoring subscriptions for every regulatory framework identified in the regulatory classification as applicable to this agent product. The subscription list is registered in the AGKB Knowledge Source Registry by the Regulatory Owner, using regulatory sources as a distinct source category. Required for each applicable framework: the official regulatory body publication feed (official gazette, regulatory authority release RSS, legal database update alert), covering at minimum: the primary regulation (e.g., EU AI Act full text and implementing acts), sector-specific guidance (e.g., EBA guidance for financial services AI), and enforcement decisions from the relevant supervisory authority.
+
+This condition does not require that all regulatory analysis be complete — it requires that the infrastructure for detecting regulatory changes is operational before behavioral specification work begins. A specification written in a regulatory vacuum (without active monitoring for changes to the frameworks it must satisfy) is a specification that becomes stale without warning. Regulatory monitoring subscriptions are a prerequisite for specification currency, not a Stage 5 operational add-on.
+
+For organizations deploying multiple agent products, the same regulatory monitoring subscriptions can serve multiple products — the condition is satisfied by confirming the relevant frameworks are already monitored at the organizational level, not by creating redundant product-level subscriptions.
+
 The gate decision is recorded with the name of the assessor, the date, the conditions satisfied, any conditions deferred with documented rationale, and the conditions that must be satisfied before Stage 2 outputs can advance to Stage 3. A gate decision with deferred conditions is a conditional pass — Stage 2 may begin on the non-deferred components, but Stage 3 cannot begin until the deferred conditions are resolved.
 
 Gate records are retained for the product's operational life plus the jurisdiction's applicable retention period. For EU high-risk AI systems, technical documentation must be retained for ten years after the system is placed on the market.
@@ -249,3 +292,19 @@ Accountability role assignments are recorded at Stage 1 in AGKB and updated when
 
 **Accountability Matrix (RACI):**
 For each APLC gate decision, a RACI (Responsible, Accountable, Consulted, Informed) is defined by role. This is documented in [[aplc.md]] and the gate-specific documents.
+
+### Governance Role Independence Requirements
+
+Governance decisions are only as trustworthy as the independence of the people making them. The following independence requirements apply to governance role assignments and to specific governance tasks throughout the APLC lifecycle.
+
+**Prohibited role combinations (for the same agent product).** These combinations create conflicts of interest that compromise governance integrity:
+
+- *Behavioral Owner and product owner:* the product owner approves the evaluation clearance report that the Behavioral Owner authored and the behavioral specification that the Behavioral Owner wrote. Separation is required — the product owner must be a different individual from the Behavioral Owner, with no direct reporting relationship between them in either direction.
+
+- *Waiver grantor and gate approver for the same gate:* the person who approves a waiver and the person who approves the gate that the waiver enables must be different individuals. Approving your own waiver — clearing a condition you yourself granted an exemption for — eliminates the oversight function.
+
+- *Red-team lead and anyone who built the system:* the red-team lead for any given release may not have contributed to any of: the system prompt, the behavioral specification, or the evaluation suite design for that release cycle. Adversarial testing requires a perspective unconstrained by builder assumptions.
+
+**Disclosure and management.** At the start of any gate assessment, evaluation review, or red-team exercise, each participant must disclose any potential conflict of interest — including organizational reporting relationships, prior involvement in the product's development, financial interests in deployment timelines, and any other relationship that could compromise independence. Undisclosed conflicts discovered after a governance decision require that decision to be re-reviewed by a conflict-free panel.
+
+**Conflict discovered mid-process.** When a conflict of interest is identified after a governance role has already been filled (e.g., the designated red-team lead joins the product team), the role must be reassigned immediately. Decisions made while the conflict was present but undisclosed require a retrospective review to determine whether the conflict materially affected the decision. The retrospective review finding is filed in the AGKB alongside the original decision record.

@@ -86,6 +86,12 @@ Category D holds the maintenance governance record — the planned changes to th
 
 **CSH History.** The complete composite state hash history for the agent product from initial deployment through current production state. Each CSH record carries: the hash value, the component breakdown (application code hash, system prompt hash, foundation model identifier, knowledge base snapshot identifier, memory state identifier), the date and time the CSH became active, the maintenance notification reference that authorized the change (or the unplanned change flag if no prior notification was filed), and the behavioral characterization at that CSH (which evaluation suite, which threshold record, which behavioral baseline applies). The CSH history is the foundation of incident investigation per [[agent-composite-versioning]].
 
+**APLC Framework Version Record.** A system-level record (not product-specific) that identifies the version of the APLC governance framework that was active at each gate decision for each agent product. Required fields: framework_version (semantic version of the APLC documentation set), effective_date (when this version became active), changelog_summary (what changed from the prior version), transition_policy (for in-flight products: whether the new version applies at the next gate, immediately, or not until the next new product conception), and framework_steward (the named individual responsible for APLC framework governance in this organization).
+
+The APLC Framework Version Record is referenced by every gate decision record (Category B): gate decision records carry a `framework_version_ref` field pointing to the framework version active at the time of the gate decision. This enables future auditors to assess gate decisions against the requirements that were active when the decision was made, not retroactively against later requirements.
+
+When the APLC framework is updated (any document in the APLC set is revised), a new APLC Framework Version Record is filed. The transition policy specified in the new record determines how in-flight products are affected.
+
 ### Category E — Institutional Memory
 
 Cross-stage; applies to all agent products in the organization's portfolio.
@@ -99,6 +105,29 @@ Category E is the organizational governance commons — the cross-product knowle
 **Failure Mode Catalog.** The enumerated behavioral failure modes discovered across all agent products, with their detection signatures, root causes, and mitigations. Each entry carries: failure mode identifier, failure class (quality, behavioral, safety, persona, adversarial), a description of the failure pattern, the detection signals that preceded or accompanied the failure in known instances, the root causes identified across instances, the mitigations that were effective, the agent products in which this failure mode occurred, and the evaluation additions that now test for this failure mode. The failure mode catalog is the primary reference for the Red-Team Adversary governance agent when constructing attack scenarios, and for the Foundation Model Impact Prediction agent when assessing which failure modes a model update might activate.
 
 **Regulatory Precedent Store.** The record of regulatory determinations, conformity assessment outcomes, notification decisions, and regulatory authority correspondence related to the organization's deployed agent products. Each entry carries: the product identifier, the regulatory framework, the determination or precedent, the date, and the applicable scope. The regulatory precedent store is the reference for the Regulatory Classification governance agent when classifying new products and for the Behavioral Owner and Regulatory Owner when assessing notification obligations during incident response.
+
+### Evidence Quality Tiers for Institutional Memory
+
+Institutional memory artifacts in Category E vary significantly in the quality and recency of their underlying evidence. A failure mode catalog entry derived from a single incident three years ago is less reliable than one corroborated by fifteen incidents across eight products in the last year. Governance agents that retrieve Category E artifacts must surface evidence quality to their human collaborators rather than presenting all institutional memory with equal authority.
+
+**Required fields for all Category E artifacts (additions to existing schema):**
+
+- `corroboration_count`: the number of independent product observations supporting this entry (number of distinct agent products in which this pattern, failure mode, or lesson has been observed). Minimum value: 1 (the original observation).
+- `evidence_age_days`: the number of days since the most recent corroborating observation. Updated each time a new corroborating observation is filed.
+- `evidence_tier`: derived from corroboration_count and evidence_age_days per the table below.
+
+**Evidence tier classification:**
+
+| Evidence Tier | Criteria | Governance agent handling |
+| --- | --- | --- |
+| **High** | corroboration_count ≥ 3 AND evidence_age_days ≤ 365 | Present as established guidance; cite tier in output |
+| **Medium** | corroboration_count ≥ 2 OR (corroboration_count = 1 AND evidence_age_days ≤ 180) | Present with qualification: "supported by limited evidence"; cite tier |
+| **Low** | corroboration_count = 1 AND evidence_age_days > 180 | Present as historical observation; explicitly state that corroboration from recent deployments is needed; cite tier |
+| **Stale** | evidence_age_days > 1095 (3 years) without any corroboration | Flag for human review before use; governance agent may not use stale entries as primary evidence in gate assessments |
+
+**Governance agent handling requirement.** When a governance agent retrieves a Category E artifact with evidence tier Low or Stale, the agent must: (a) include the evidence tier and evidence age in its output; (b) not present the artifact as authoritative without the Behavioral Owner's explicit confirmation that the artifact remains applicable to the current context; (c) for Stale artifacts, request a human review decision before incorporating the content in any gate evidence package.
+
+**Tier update process.** The evidence tier is automatically recomputed when a new corroborating observation is filed against the artifact, or when the passage of time degrades an artifact from Medium to Low or from Low to Stale. The AGKB Governance Agent computes tier updates daily as a background task and files updated tier labels to affected artifacts. A Behavioral Owner is notified when any artifact in their product's governance scope degrades from Medium to Low, or from Low to Stale.
 
 ---
 
@@ -158,6 +187,20 @@ Memory state artifacts that contain personal data from interactions are subject 
 The erasure protocol distinguishes content data from governance metadata: interaction content (user inputs, agent outputs, session data that constitutes personal data) is stored separately from the governance records that reference it. Governance records reference interaction content through anonymized interaction identifiers; the personal data is stored in a separate interaction content store subject to GDPR retention and erasure controls.
 
 When a data erasure request is received: the interaction content store is the subject of erasure; the AGKB governance records (HITL decision log entries, incident report references) retain the anonymized identifier and the governance-relevant fields (decision type, timestamp, severity, outcome) with the personal content replaced by an erasure notation. The governance record's integrity — as evidence of when a decision was made and what class of interaction it concerned — is preserved. The personal content is erased. This separation is architecturally required; it may not be implemented by storing personal data directly in immutable governance records.
+
+### AGKB Security Architecture
+
+The AGKB is the highest-value target in the APLC governance ecosystem. It contains the agent's complete behavioral boundary map, all red-team attack-and-response records, evaluation evidence, and gate decisions. A compromised AGKB enables evidence laundering, precise adversarial targeting, and regulatory fraud. Security controls for the AGKB must be commensurate with this threat profile.
+
+**Mandatory security controls:**
+
+*Cryptographic signing of all writes.* Every record written to the AGKB must be signed by the writing principal (human or governance agent) using an organizational key managed through the organization's identity and access management infrastructure. The AGKB Governance Agent verifies signatures at write time and rejects unsigned writes. A write that cannot be attributed to a verified principal is a governance integrity violation — not just an access control failure.
+
+*CSH computation environment integrity.* The system that computes Composite State Hash values must operate in an isolated environment with tamper evidence: (a) the inputs to each hash computation are logged before the computation runs; (b) computed hash values are signed by the computation environment's key; (c) the receiving governance layer verifies the signature before accepting a CSH value. A CSH value without a valid computation environment signature is not accepted as a governance record. A compromised CSH computation environment falsifies the entire audit chain.
+
+*AGKB compromise incident class.* An AGKB compromise — unauthorized modification of any AGKB record, unauthorized access to restricted-classification artifacts, or signature verification failure indicating tampering — is a governance incident of the highest severity. Immediate response: (a) suspend all governance decisions that relied on potentially compromised AGKB records until integrity can be verified; (b) notify the accountable human, Technical Owner, and legal/risk team simultaneously; (c) initiate a full integrity audit of AGKB records from the suspected compromise window; (d) assess regulatory notification obligations (EU AI Act Article 73 for affected high-risk systems; DORA Article 19 for financial services deployments). An AGKB compromise is not an IT incident to be handled at the infrastructure layer — it is a governance event with product-level consequences for every agent product whose evidence records may have been affected.
+
+*Network isolation.* The AGKB must not be accessible from the production agent's runtime environment through any direct network path. Governance agents access the AGKB through the defined tool stack interfaces (T01–T13); product agents do not access the AGKB directly. The network boundary between the production agent runtime and the AGKB is enforced at the infrastructure layer (network ACL, API gateway policy), not by behavioral specification alone.
 
 ---
 
@@ -371,6 +414,12 @@ Artifacts in Categories A and D that reference external source documents (domain
 
 Staleness detection is not fully automatable — whether a source document change materially affects the AGKB artifact that references it requires human assessment. The Sentinel identifies the change and surfaces it; the Behavioral Owner or Technical Owner makes the materiality determination.
 
+**Regulatory source registration.** The Knowledge Source Registry must include entries for the regulatory frameworks cited in each agent product's behavioral specifications and safety requirements — not only for knowledge base content documents. Regulatory sources are registered at Stage 1, when the regulatory classification is completed, and are maintained by the Regulatory Owner rather than the knowledge base content owners.
+
+Required registry entries for regulatory sources: the official regulatory body and document reference (e.g., "European Parliament and Council, Regulation (EU) 2024/1689 (EU AI Act), OJ L 2024/1689"); the specific articles and annexes cited in the behavioral specification; the source monitoring mechanism (official gazette feed, regulatory body publication RSS, legal database update alert); the staleness threshold (default 30 days for regulatory content — regulatory changes can invalidate behavioral constraints without warning); and the Regulatory Owner as the responsible contact for staleness alerts.
+
+When the Knowledge Staleness Sentinel detects a change in a registered regulatory source, the alert is routed to the Regulatory Owner (not the Behavioral Owner) for materiality determination. A regulatory source change that affects any active behavioral constraint triggers a mandatory specification review under the Specification Health Monitoring process, in addition to any regulatory re-classification assessment. Regulatory source changes are unconditional review triggers — they activate regardless of all other specification health indicators.
+
 ### Provenance Tracking
 
 Every record in the AGKB carries a provenance field indicating how it was produced: human-authored, tool-generated, agent-proposed-with-human-review, or agent-generated. Records carrying the agent-generated provenance label may not be used as gate condition evidence without named human review, per the epistemic tier requirements in [[agent-behavioral-evaluation]]. The AGKB enforces this at retrieval time for gate-relevant queries — records without a valid provenance label for gate use are flagged in retrieval results.
@@ -386,6 +435,27 @@ Conflict detection is partially automated by the Constraint Consistency Checker 
 ### Source Monitoring
 
 For Category E institutional memory artifacts — particularly the Failure Mode Catalog and Specification Pattern Library — the AGKB maintains awareness of whether the underlying evidence supporting each catalog entry remains current. When the agent products that sourced a failure mode catalog entry are retired, the entry is not removed; it is marked with a provenance age indicator that notes how long ago the originating evidence was produced. Entries older than three years without corroboration from more recent product experience are flagged for human review to assess whether they remain accurate descriptions of failure modes the organization's current technology stack can produce.
+
+### AGKB Information Classification
+
+AGKB artifacts carry an information classification label that governs their handling, access, and sharing requirements. Classification is assigned at artifact type level — all records of the same type carry the same classification — with individual records carrying a classification override where their content warrants heightened restriction.
+
+**Default classification by artifact category:**
+
+| Artifact Category | Default Classification | Handling Requirements |
+|---|---|---|
+| Category A — Behavioral Specifications | `CONFIDENTIAL — Behavioral Specification` | Contains the agent's complete behavioral boundary map. Accessible to: named accountability roles, governance agents within authorized scope. Not shareable outside the organization without Regulatory Owner authorization and recipient NDA. |
+| Category B — Red-Team Findings | `RESTRICTED — Adversarial Intelligence` | Contains detailed attack-and-response records that constitute an adversarial roadmap for the agent. Accessible to: red-team lead, named accountable human, legal/compliance on documented need-to-know. Not accessible to the product engineering team by default. No sharing outside the organization under any circumstances without Regulatory Owner authorization. |
+| Category B — Evaluation Results | `CONFIDENTIAL — Evaluation Evidence` | Accessible to: accountability roles, evaluation team lead, governance agents within scope. |
+| Category B — Gate Decision Records | `CONFIDENTIAL — Governance Record` | Accessible to: all accountability roles, regulatory inspectors with formal authority. |
+| Category C — Safety and Adversarial Incident Reports | `RESTRICTED — Incident Intelligence` | Accessible to: accountable human, legal/risk, Regulatory Owner. Not accessible to the broader product team without accountable human authorization. |
+| Category C — HITL Decision Logs | `CONFIDENTIAL — Operational Record` | Personal data elements within HITL logs carry an additional `PERSONAL DATA — GDPR RESTRICTED` sublabel and are subject to GDPR erasure protocols. |
+| Category D — Maintenance Artifacts | `CONFIDENTIAL — Governance Record` | |
+| Category E — Institutional Memory | `INTERNAL — Cross-Portfolio Knowledge` | Accessible to all governance roles across the organization's APLC portfolio. |
+
+**Classification enforcement.** The AGKB Governance Agent enforces classification at query and context injection time: governance agents may not receive artifacts with a classification higher than their authorized access scope. Human access to RESTRICTED artifacts requires a documented access request with need-to-know justification, approved by the Regulatory Owner. Access grants are logged in the AGKB audit trail.
+
+**Physical and logical controls.** RESTRICTED artifacts must be stored in a separately access-controlled partition of the AGKB with additional authentication requirements (multi-factor authentication for access, automatic session timeout after 15 minutes of inactivity). CONFIDENTIAL artifacts require organizational authentication but do not require the additional partition controls.
 
 ---
 

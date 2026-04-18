@@ -126,3 +126,34 @@ The ASDLC and APLC are separate governance frameworks with separate gate conditi
 **An ASDLC waiver does not automatically waive the corresponding APLC condition.** The frameworks have different scope, different accountability chains, and different gate grantor roles. An ASDLC waiver is granted within the ASDLC accountability structure; it carries no authority over APLC gate conditions. An organization that treats an ASDLC waiver as implicitly covering the corresponding APLC condition has collapsed two separate governance frameworks into one — reducing the accountability that both frameworks are designed to produce. Each framework's conditions must be explicitly waived within that framework.
 
 **Cross-framework visibility.** For organizations running both APLC and ASDLC concurrently, the waiver portfolio review should include a cross-framework reconciliation check: are there any conditions where one framework carries an active waiver and the corresponding condition in the other framework is marked as passing without acknowledgement of the shared risk? If so, the governance records are inconsistent and must be reconciled before the next gate review in either framework.
+
+---
+
+## Section 8: Governance Decision Appeal Process
+
+Governance decisions — gate failures, waiver denials, red-team severity classifications, evaluation clearance rejections — must be challengeable through a formal process. Without an appeal mechanism, disputes are resolved through informal pressure or workarounds, both of which undermine governance integrity more than a structured disagreement would.
+
+### Appealable Decisions
+
+The following governance decisions may be appealed:
+
+- Gate failures where the appealing party believes a gate condition was incorrectly assessed (the evidence met the condition; the assessor applied the wrong standard)
+- Waiver denials where the appealing party believes the compensating control provides adequate risk mitigation and the rationale for denial is disproportionate
+- Red-team severity classifications where the appealing party disputes whether the finding meets the Critical or High severity definition
+- Evaluation clearance rejections where the appealing party believes the clearance criteria were applied inconsistently with prior practice
+
+Decisions that may not be appealed: any decision where a Critical red-team finding was the basis for the gate failure (Critical findings block release without exception — this is not an assessment subject to dispute); any decision made by an external regulatory authority.
+
+### Appeal Process
+
+**Step 1 — Appeal filing.** The appealing party files a structured appeal record in AGKB within 5 business days of the disputed decision. The appeal record must contain: the specific decision being appealed (gate type, product version, decision date); the specific gate condition or assessment standard the appealing party believes was incorrectly applied; the evidence supporting the appeal (what evidence did the assessor overlook or misapply?); the requested outcome (clear the gate, reclassify the finding, grant the waiver).
+
+**Step 2 — Appeal review panel.** The appeal is reviewed by a panel of three: (a) the accountable human for the product (or a delegate with no involvement in the original decision); (b) a second accountability role holder not involved in the original decision; (c) for disputes involving technical assessment (red-team findings, evaluation coverage claims), a qualified domain expert external to the product team. The panel must not include any member who participated in the original disputed decision.
+
+**Step 3 — Panel decision.** The panel reviews the evidence and issues a decision within 10 business days of the appeal filing. The decision is one of: uphold original decision (appeal denied, original decision stands); reverse decision (appeal granted, gate is cleared, finding is reclassified, or waiver is granted); remand for reassessment (the panel identifies a procedural error and directs the original assessor to reassess with corrected procedure).
+
+**Step 4 — Record.** The appeal record, the panel's decision, and the reasoning are filed in AGKB alongside the original decision record. Both records are returned together in any future retrieval of the original decision identifier.
+
+**During appeal.** The original decision remains in effect pending the appeal outcome. The product does not deploy, proceed to the next stage, or operate without a governance cover while the appeal is active. An appeal filed to extend deployment timelines without genuine substantive basis is a governance integrity violation — the accountable human and the panel are responsible for distinguishing genuine technical disputes from timeline-motivated challenges.
+
+**Appeal statistics.** The governance observability system tracks appeal volume, appeal outcomes, and the frequency with which specific assessors' decisions are appealed and overturned. A high overturn rate for a specific assessor indicates calibration issues in their assessment methodology; a high appeal rate without overturns may indicate systematic pressure to challenge governance outcomes. Both patterns trigger a governance process review.

@@ -12,13 +12,13 @@ See [agent-operations.md](agent-operations.md) for Stage 5 monitoring that trigg
 
 Software versioning assumes a single artifact with a single version. When you deploy version 2.3.1 of a service, you know precisely what is running: one artifact, one version, one behavioral surface. The version number is a complete description of what was shipped.
 
-An agent product is not a single artifact. Its behavior at runtime is the product of five components, each controlled by a different party, each changing on a different timescale, each capable of producing a behavioral change with no corresponding change to the others. Two deployments sharing the same code version but running against different foundation model snapshots will behave differently. Two deployments sharing code and model but with different knowledge base content will retrieve different facts. A version number that covers only the code tells you almost nothing about what the agent will actually do.
+An agent product is not a single artifact. Its behavior at runtime is the product of six components, each controlled by a different party, each changing on a different timescale, each capable of producing a behavioral change with no corresponding change to the others. Two deployments sharing the same code version but running against different foundation model snapshots will behave differently. Two deployments sharing code and model but with different knowledge base content will retrieve different facts. A version number that covers only the code tells you almost nothing about what the agent will actually do.
 
-This is not an abstract concern. Foundation model providers update hosted model versions — sometimes silently — without issuing a new model identifier visible to operators. A behavioral regression that begins on a Tuesday in an agent product whose code has not changed is almost certainly a foundation model or knowledge base change. Without a composite versioning model that makes all five components explicitly tracked, that regression is uninvestigable. The on-call engineer has no diff to examine, no change to rollback, no component to point at. They have a behavioral change and no explanation.
+This is not an abstract concern. Foundation model providers update hosted model versions — sometimes silently — without issuing a new model identifier visible to operators. A behavioral regression that begins on a Tuesday in an agent product whose code has not changed is almost certainly a foundation model or knowledge base change. Without a composite versioning model that makes all six components explicitly tracked, that regression is uninvestigable. The on-call engineer has no diff to examine, no change to rollback, no component to point at. They have a behavioral change and no explanation.
 
 The composite versioning model described in this document makes behavioral incidents investigable by creating a formal record of every component that shapes agent behavior, who controls it, how it changes, and what its exact state was at any point in time. It does not prevent behavioral changes caused by components the operator does not control. It makes those changes visible, attributable, and — where reconstruction is possible — reproducible.
 
-### The Five Components
+### The Six Components
 
 **1. Application code** — the orchestration logic, tool integrations, memory management, routing rules, and infrastructure that the engineering team authors and deploys. This is the component software versioning already handles well. Controlled by the engineering team. Versioned in source control. Changes are author-initiated, reviewed, and deployed through the standard release process.
 
@@ -32,15 +32,19 @@ The composite versioning model described in this document makes behavioral incid
 
 Two deployments with the same code version, same prompt, same model, and same knowledge base will behave differently if one carries accumulated memory that the other does not. Behavioral differences between production and a test environment that shares all other components are often explained entirely by memory state divergence.
 
+**6. Tool manifest** — the set of external tools (APIs, functions, plugins, or services) the agent can invoke, along with their versions and interface contracts. This component applies to any agent that uses tools beyond the model's base capability; it is designated `N/A` for stateless non-tool-using agents. Controlled by the engineering and platform team. Versioned through the tool manifest — a structured list of each tool's name, version, and interface schema hash. A tool provider update that changes an API response format, adds or removes fields, or changes a tool's behavior without the engineering team's action is a behavioral state change that must be detected and recorded. Example: an agent built on a financial data API that adds a new required field to its response schema changes the agent's behavior on every tool-dependent interaction, even if no other component changed.
+
 ---
 
 ## Composite State Hash
 
-The Composite State Hash (CSH) is a single value that uniquely identifies the complete behavioral state of an agent product at a point in time. It is computed over all five components simultaneously.
+The Composite State Hash (CSH) is a single value that uniquely identifies the complete behavioral state of an agent product at a point in time. It is computed over all six components simultaneously.
 
 ```
-CSH = hash(code_commit || prompt_version || model_id || kb_snapshot_id || memory_state_hash)
+CSH = hash(code_commit || prompt_version || model_id || kb_snapshot_id || memory_state_hash || tool_manifest_hash)
 ```
+
+For agents with no tool access, `tool_manifest_hash` is the hash of the string literal `stateless-no-tools`. This ensures that a stateless agent that subsequently gains tool access generates a new CSH rather than producing a hash collision with the prior state.
 
 The CSH is computed at every release, stored in the composite state manifest, logged in the deployment record, and captured in operational monitoring at regular intervals (see Stage 5 in [agent-operations.md](agent-operations.md)). When a behavioral incident occurs, the CSH at the incident time is compared to the CSH at the prior release. The diff identifies which components changed. That is the starting point for investigation.
 
@@ -83,6 +87,16 @@ The commit hash and the container image digest address different things. The com
 
 *Dynamic assembly:* prompts assembled at runtime from multiple sources (templates, injected context, tool descriptions) are the most complex case. Each source component must be versioned independently, and the assembly specification — the rules by which components are combined — must itself be versioned. The content hash of the assembled prompt as delivered to the model is the final verification that the assembly process produced what was intended.
 
+**System prompt supply chain integrity.** The system prompt is the behavioral component most directly controllable by insider threat: anyone with write access to the prompt storage location can modify agent behavior without code deployment. Supply chain integrity controls address this threat.
+
+*Authorization.* Writes to the system prompt store must be authorized by the named Behavioral Owner, authenticated through the organization's identity and access management system, and logged to the AGKB with the authorizer's identity, the timestamp, and the diff between the previous and new content. Anonymous writes and bulk imports without individual authorization records are not permitted.
+
+*Delivery-time integrity verification.* At each interaction, the system prompt infrastructure computes the SHA-256 hash of the prompt bytes as delivered to the model and compares it against the content hash recorded in the most recent composite state manifest. A mismatch indicates one of two conditions: (a) the prompt was modified since the manifest was filed, without a corresponding manifest update (unauthorized change); or (b) the manifest is stale (a governed change occurred but the manifest was not updated). Both conditions require investigation. A mismatch that cannot be explained within 30 minutes is treated as a behavioral incident of the Adversarial class — the assumption is unauthorized modification until proven otherwise.
+
+*Unauthorized change response.* An unauthorized system prompt modification triggers: (a) immediate halt of new interactions pending investigation; (b) review of all interactions processed since the last verified manifest state, flagged as potentially processed under an unauthorized behavioral configuration; (c) CSH computation from the current actual prompt to identify the extent of the behavioral state divergence; (d) accountable human notification within 30 minutes; (e) if the unauthorized change cannot be reverted within 2 hours, initiate Stage 4 rollback to the last verified composite state.
+
+*Dynamic assembly integrity.* For system prompts assembled at runtime from multiple source components, each source component must have its own authorization record and content hash. The assembly specification — the rules governing which components are combined in which order — is itself a versioned artifact with its own content hash. A change to the assembly specification without a corresponding Behavioral Owner authorization is treated identically to an unauthorized prompt modification.
+
 ### Foundation Model
 
 **Required fields:**
@@ -94,6 +108,14 @@ The commit hash and the container image digest address different things. The com
 The date-confirmed field exists because provider model identifiers are not always stable. A model name that today refers to `snapshot-2024-10-22` may tomorrow refer to `snapshot-2025-01-15` without any change to the identifier in the operator's configuration. The date confirmed records when the operator last verified that the model name resolves to the expected version. The gap between the date confirmed and the current date is the window of unverified exposure to a silent model update.
 
 For deployments where model version stability is critical to regulatory compliance or behavioral guarantees, establish a monitoring schedule for confirming model version (see [agent-operations.md](agent-operations.md)) and record each confirmation in the version history.
+
+**Silent behavioral update detection.** The CSH computation depends on the `model_name` identifier. A provider that updates a model's behavior without changing its name — which has occurred with hosted AI models — will not produce a CSH change and will not be detected by CSH monitoring. For this reason, the `date_confirmed` field is a necessary but insufficient control.
+
+**Required supplementary control: scheduled behavioral probe verification.** For any deployed agent product, weekly automated execution of a designated subset of the behavioral fingerprint probe set (defined in the Behavioral Fingerprint Primitive section) against the live production model is required. The probe responses are compared against the baseline fingerprint snapshot taken at the last confirmed CSH. A probe response distribution shift that exceeds the drift threshold defined in the behavioral specification triggers an immediate investigation, regardless of whether the CSH has changed.
+
+This probe-based detection operates independently of CSH monitoring. When a probe-based detection alert fires on a stable CSH, the presumption is a silent behavioral update by the model provider. The investigation protocol is identical to the CSH-mismatch-based detection protocol, except that the component implicated is the foundation model, and the `date_confirmed` field must be refreshed by verifying the model version directly with the provider's API or documentation.
+
+**Probe set for silent update detection.** A minimum of 20 probes from the behavioral fingerprint probe set must be designated as the "silent update sentinel probes." These probes are selected to be maximally sensitive to foundation model behavioral changes across the dimensions most critical to the agent's behavioral specification: hard boundary compliance, uncertainty expression calibration, and persona consistency. The sentinel probe set must be reviewed and updated each time the behavioral specification is revised.
 
 ### Knowledge Base
 
@@ -120,11 +142,25 @@ For persistent-memory deployments, the memory state changes continuously. Hashin
 
 Memory schema version must be tracked separately from content hash. A memory schema migration is a behavioral change even if the migrated content is semantically identical — the agent's interpretation of its own memory may differ under the new schema. Schema migrations must be recorded in the version history as a distinct event type.
 
+### Tool Manifest
+
+**Required fields:**
+
+- Tool name (the canonical name used to invoke the tool, as it appears in the agent's tool configuration)
+- Tool version (the version identifier published by the tool provider — semantic version, date-based version, or commit hash where applicable)
+- Interface schema hash (a hash of the tool's input/output schema as defined at the time of incorporation — the JSON Schema, OpenAPI spec, or equivalent)
+- Provider identifier (the name of the tool provider or the URI of the tool endpoint)
+- Date confirmed (the date on which the tool version and interface schema were last verified against the provider's current API)
+
+**Tool manifest hash computation.** The tool manifest hash is computed as a hash over the canonical serialization of all tool entries in the manifest, sorted by tool name. The canonical serialization format is: one line per tool, in the format `name:version:schema_hash:provider`, sorted ascending by name, with a newline separator. This format ensures that adding, removing, or updating any single tool produces a new manifest hash.
+
+**Silent tool updates.** Tool providers may update their API behavior without incrementing the version identifier — the same problem that affects foundation model providers. The `date_confirmed` field serves the same mitigating function as in the foundation model component: it records when the tool's behavior was last verified against the schema on record. For tools where behavioral consistency is critical, the tool schema must be verified (by sending a probe request and validating the response against the recorded schema) at least as frequently as the foundation model `date_confirmed` field is refreshed. A tool whose response schema has diverged from the recorded schema without a corresponding tool manifest update is a governance staleness event equivalent to an undetected foundation model update.
+
 ---
 
 ## Composite State Manifest Format
 
-The composite state manifest is the formal record of all five component versions at a point in time. It is created at every release (Stage 4 gate condition per [agent-release-governance.md](agent-release-governance.md)) and updated at every Stage 6 maintenance event that changes any component. The manifest is the primary artifact for incident investigation and for demonstrating behavioral state to auditors.
+The composite state manifest is the formal record of all six component versions at a point in time. It is created at every release (Stage 4 gate condition per [agent-release-governance.md](agent-release-governance.md)) and updated at every Stage 6 maintenance event that changes any component. The manifest is the primary artifact for incident investigation and for demonstrating behavioral state to auditors.
 
 ```yaml
 composite_state_manifest:
@@ -163,6 +199,17 @@ composite_state_manifest:
       state_description: [initial | persistent | post-reset-YYYY-MM-DD]
       content_hash: [hash of serialized memory, or "stateless"]
       schema_version: [memory schema version identifier]
+
+    tool_manifest:
+      manifest_hash: [hash of canonical serialization of all tool entries]
+      tool_count: [integer — number of tools in the manifest, or 0 for non-tool-using agents]
+      note: [omit entries below and set manifest_hash to hash("stateless-no-tools") for non-tool-using agents]
+      tools:
+        - name: [canonical tool name as used in agent tool configuration]
+          version: [version identifier published by tool provider]
+          schema_hash: [hash of tool input/output schema at time of incorporation]
+          provider: [tool provider name or endpoint URI]
+          date_confirmed: [YYYY-MM-DD]
 
   composite_state_hash: [CSH value]
   hash_function: [e.g., sha256]
@@ -211,6 +258,20 @@ Rollback events record the manifest ID being restored as well as the manifest ID
 Recalibration events — Stage 6 in the APLC — generate a new manifest covering all components, not just those that changed. After a recalibration, the new CSH reflects a verified, re-evaluated composite state. The recalibration is the occasion for re-confirming every component version identifier, not just the ones that were explicitly updated.
 
 The version history is a compliance record. It must be retained for the same period as the agent product's compliance documentation, as defined in [agent-retirement.md](agent-retirement.md) at Stage 7. For regulated systems, the version history is a primary artifact for regulatory examination — it demonstrates that every behavioral state transition was authorized, recorded, and traceable.
+
+---
+
+## Interaction-Level CSH Tagging
+
+**Requirement.** Every production interaction must be tagged with the CSH active at the time the interaction was processed. This tagging is applied by the agent infrastructure, not by the agent itself, and must be present in the interaction record before the record is written to storage. Interval-based CSH logging — recording the CSH at regular monitoring intervals rather than per interaction — creates a temporal uncertainty window during which a CSH change may have occurred without being attributable to specific interactions. That uncertainty makes precise incident investigation impossible.
+
+**Implementation.** The CSH at interaction time is a metadata field on the interaction record, separate from the interaction content. It does not modify the interaction content or the agent's response. The field records: the CSH value, the timestamp at which the CSH was last confirmed (from the most recent CSH computation event), and a staleness flag if the CSH confirmation timestamp precedes the interaction timestamp by more than the staleness window defined in the behavioral specification.
+
+**Staleness window.** The maximum acceptable gap between the most recent CSH confirmation and the current interaction is defined in the behavioral specification's Layer 3 performance targets. Default maximum staleness: 1 hour for Tier 4 agents; 4 hours for Tier 3; 24 hours for Tier 2 and Tier 1. An interaction processed with a stale CSH tag is still tagged — the staleness is recorded — but triggers a CSH re-computation event immediately.
+
+**Incident investigation benefit.** With per-interaction CSH tagging, incident investigation can determine the exact behavioral state for any specific interaction without temporal reconstruction. The investigation question "what was the agent's behavioral state at the time of this specific interaction?" is answered directly from the interaction record, not inferred from interval logs.
+
+**Audit requirement.** Interaction-level CSH tags are retained for the same period as the interaction records themselves, per the retention policy in Stage 7. They are indexed in the AGKB CSH History (Category D) to enable cross-interaction behavioral state queries.
 
 ---
 
@@ -286,6 +347,7 @@ Every APLC agent product must have a node of type `AgentProduct` in the governan
 | `prompt_component` | The system prompt version label and content hash from the CSH |
 | `knowledge_component` | The knowledge base snapshot ID from the CSH |
 | `memory_component` | The memory state content hash, or the literal `stateless` designation, from the CSH |
+| `tool_component` | The tool manifest hash, or the literal `stateless-no-tools` designation for non-tool-using agents, from the CSH |
 
 ### Evidence Edges from CSH Events
 
@@ -394,7 +456,7 @@ A Behavioral Release Gate package that does not include a fingerprint snapshot i
 
 ## Memory State Snapshot Policy
 
-Memory state is the most dynamic component of the Composite Agent State. Unlike application code, system prompt, foundation model, and knowledge base — which change only at defined maintenance events — persistent memory state evolves continuously during operation as the agent accumulates interaction context. This continuous evolution creates a governance challenge: the CSH, which captures the memory state as one of its five components, cannot be recomputed at every interaction without making CSH computation impractical. The Memory State Snapshot Policy governs when memory state is captured for governance purposes, what that snapshot must contain, and how snapshots are retained.
+Memory state is the most dynamic component of the Composite Agent State. Unlike application code, system prompt, foundation model, and knowledge base — which change only at defined maintenance events — persistent memory state evolves continuously during operation as the agent accumulates interaction context. This continuous evolution creates a governance challenge: the CSH, which captures the memory state as one of its six components, cannot be recomputed at every interaction without making CSH computation impractical. The Memory State Snapshot Policy governs when memory state is captured for governance purposes, what that snapshot must contain, and how snapshots are retained.
 
 ### Snapshot Trigger Conditions
 

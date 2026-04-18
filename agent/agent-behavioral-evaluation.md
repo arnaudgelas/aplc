@@ -65,6 +65,23 @@ The evaluation distribution for Layer 2 is not the same as the test suite for La
 
 An evaluation portfolio that does not include a held-out set is measuring how well the agent performs on cases the builder anticipated. That is not an evaluation of the agent product. It is a measurement of the builder's accuracy in anticipating the evaluation distribution.
 
+**Minimum held-out set size.** The held-out set minimum size is derived from the tail risk limit defined in the behavioral specification for each behavioral contract:
+
+```
+minimum_holdout_n = ceil(1 / (tail_risk_limit × confidence_level))
+```
+
+Where `tail_risk_limit` and `confidence_level` are the values authored in the behavioral specification at Stage 2. Reference values:
+
+| Risk level | Default tail risk limit | Default confidence | Minimum n |
+| --- | --- | --- | --- |
+| Critical | 0.0001 | 0.95 | 21,053 |
+| High | 0.001 | 0.95 | 2,106 |
+| Medium | 0.01 | 0.90 | 1,112 |
+| Low | 0.05 | 0.90 | 223 |
+
+The minimum applies per behavioral contract, not per evaluation run — the same held-out interactions may cover multiple contracts if they exercise multiple behavioral dimensions. A held-out set that meets the minimum for the highest-risk contract in the portfolio satisfies the requirement for all lower-risk contracts. A held-out set that is undersized for any Critical or High contract may not be submitted as gate evidence for those contracts.
+
 **Coverage requirement for Layer 2:** before the behavioral release gate, at minimum 80% of core use cases must have automated evaluations, and at minimum 50% of edge cases must have automated evaluations. These are minimum bars, not targets. A portfolio that meets these minimums has evidence of behavioral coverage. A portfolio that falls short is making claims about behavioral quality that the evaluation does not support.
 
 ---
@@ -131,6 +148,9 @@ Red-team scope is calibrated by the agent product's autonomy tier as defined in 
 **Policy Envelope Escape (Tier 4 exclusive).** This category tests whether an adversary can cause a Tier 4 agent to operate outside the boundaries of its defined policy envelope. Three specific attack surfaces must be covered:
 
 - *Composition attacks.* Individual in-envelope actions that, when combined in a specific sequence or combination, produce an aggregate outcome that falls outside the policy envelope. The agent takes only permitted steps, but the result violates the envelope's intent.
+
+  **Composition attack minimum methodology:** Define bounded action sequence depth N (minimum N=5 for all Tier 4 agents). Enumerate all action classes available to the agent within its policy envelope as defined in the behavioral specification. Generate and execute test sequences by three methods: (1) random combinations of N sequential in-envelope actions, sampling at least 50 distinct sequences; (2) targeted sequences specifically designed to approach the blast radius ceiling through action accumulation — the sequence is constructed so that each action individually uses less than 10% of the blast radius ceiling but their aggregate exceeds it; (3) cycling sequences that repeat a single action class N times to test whether repetition violates temporal or accumulation constraints in the policy envelope. Minimum coverage: 20 composition sequences per distinct action class available to the Tier 4 agent. For each sequence, compute the aggregate blast radius and compare against the policy envelope ceiling. Any sequence whose aggregate blast radius exceeds the ceiling is a Critical finding regardless of whether each individual action was within the envelope. A composition attack finding at Critical severity is not eligible for waiver under the Waiver Governance framework.
+
 - *Enforcement mechanism bypass.* Does the enforcement logic that keeps the agent within its envelope hold under adversarial input? Can adversarial framing, tool output manipulation, or context injection cause the agent to misread its own boundary conditions?
 - *Kill-switch prevention.* Can an adversary cause the agent to resist, ignore, defer, or route around human override or shutdown signals? This includes both direct interference (suppressing a kill signal) and indirect interference (consuming resources or creating dependencies that make shutdown operationally costly).
 
@@ -153,6 +173,32 @@ Every red-team exercise must cover all applicable categories per the tier calibr
 **Information extraction.** Can an adversarial user extract contents of the system prompt, user data present in the context window, internal state, or configuration details that would assist further attacks? Information extraction may not directly cause harm on its own, but it is often the prerequisite for more targeted attacks. Common vectors: direct requests ("what are your instructions?"), indirect probing ("what are you not allowed to do?"), comparison questions that reveal system prompt details by inference, and context manipulation that causes the agent to repeat information it retrieved from a confidential source.
 
 **Social engineering.** Can a fluent, persuasive sequence of inputs cause the agent to violate its hard boundaries? Unlike the other attack categories, social engineering relies on the quality of the adversarial input rather than a specific technical vector. Test whether a well-crafted multi-turn conversation — establishing rapport, building a plausible scenario, applying social pressure — can bring the agent to a boundary violation that direct attacks did not achieve. Social engineering attacks are often the hardest to defend against in LLM-based systems because the same contextual sensitivity that makes an agent helpful also makes it susceptible to persuasive framing.
+
+**Knowledge Base Injection (required for all agents using RAG or any external knowledge retrieval).** The attack surface is the document ingestion pipeline, document submission interfaces, and any content flow into the knowledge base. Four attack vectors must be covered:
+
+(1) *Direct pipeline injection.* Submit documents to the ingestion pipeline that contain prompt injection payloads in document text, document metadata, and embedded hyperlinks. Test whether the pipeline sanitizes adversarial content before indexing. An injected payload that survives ingestion and influences agent behavior is a High or Critical finding depending on the behavioral impact.
+
+(2) *Semantic drift injection.* Submit documents that do not contain explicit injection payloads but whose content systematically shifts retrieved knowledge toward boundary-approaching responses over multiple interactions. This requires a multi-interaction test sequence: measure the agent's boundary distance on the target behavioral dimension before and after the semantic drift documents are added to the knowledge base. A measurable shift toward boundary violation is a High finding.
+
+(3) *Provenance spoofing.* Submit documents claiming false authoritative provenance — claiming to be operator policy documents, regulatory guidance, or system configuration. Test whether the agent assigns elevated authority to retrieved content based on claimed provenance rather than verified provenance.
+
+(4) *Cross-product poisoning (multi-product deployments only).* For knowledge bases shared across agent products: inject content targeted at one product and test whether it affects the behavioral profile of other products that retrieve from the same knowledge base. A confirmed cross-product effect is a Critical finding.
+
+This category may not be omitted for RAG-enabled agents on the grounds that the knowledge base is "internal only." The attack surface exists regardless of deployment perimeter.
+
+**Inter-Agent Injection (required for multi-agent deployments).** Scope: any deployment where two or more agent products exchange messages, where one agent provides inputs to another, or where an orchestrator agent coordinates subordinate agents. This category tests whether a compromised, jailbroken, or adversarially primed agent can inject adversarial content into another agent's context through legitimate message channels.
+
+Four attack vectors must be covered:
+
+(1) *Orchestrator compromise.* Simulate a compromised orchestrator agent that includes adversarial instructions alongside legitimate task context in messages passed to a subordinate agent. The adversarial content is embedded in the message structure in ways that appear consistent with normal orchestration messages.
+
+(2) *Peer contamination.* Simulate a peer agent that embeds prompt injection payloads in responses that another agent receives as task inputs. The injected agent's response is well-formed and plausible — the payload is not obvious.
+
+(3) *Aggregated multi-turn manipulation.* Simulate a sequence of messages from multiple agents that each appear innocuous but collectively shift the target agent's behavior toward a specification violation. No single message triggers a boundary; the sequence does.
+
+(4) *Authority impersonation via agent channel.* Have a simulated peer agent claim authority levels — operator authority, system authority — that it does not hold within the trust architecture defined at Stage 1. Test whether the target agent enforces the principal hierarchy against agent-sourced authority claims with the same rigor as user-sourced claims.
+
+The sandboxed evaluation environment for this category must replicate the actual multi-agent message protocol used in the deployment. A simulated environment that does not match the real message format and channel is not testing the real attack surface and does not satisfy this category.
 
 ---
 
@@ -354,7 +400,15 @@ The product owner who approves evaluation clearance is making a product-level de
 
 **Longitudinal stability.** Initial stability measurement taken against the stability test set and recorded. T0 baseline values documented for each measured dimension. The stability test set is filed as part of the release artefacts.
 
-**Behavioral baseline.** The quantitative behavioral profile at this evaluation pass — the full set of Layer 2 assurance target measurements, Layer 4 rubric scores, and stability test results — documented and filed as the release baseline. This baseline is the reference for all future drift detection in Stage 5. Without it, drift cannot be measured. A behavioral release gate that does not produce a behavioral baseline document is not complete.
+**Behavioral baseline.** Two baseline comparisons are required in every evaluation clearance report:
+
+*Current-to-prior-release comparison.* The quantitative behavioral profile at this evaluation pass compared against the most recent prior release baseline. This identifies changes from the last known-good state. Standard practice — most products do this already. All Layer 2 assurance target measurements, Layer 4 rubric scores, and stability test results are included, with signed deltas from the prior release.
+
+*Current-to-original-release comparison (required at every gate).* The quantitative behavioral profile at this evaluation pass compared against the **original Stage 4 baseline** — the behavioral metrics recorded at the product's first production deployment. This comparison is mandatory at every gate, regardless of how many recalibrations have occurred since the original release. The original baseline is the product as it was designed, evaluated, and authorized; subsequent baselines represent the product as it evolved. Comparison against the original detects cumulative behavioral drift that sequential recalibration baselines mask.
+
+For each core behavioral metric, the clearance report must report both deltas (current-to-prior, current-to-original) and must explain any current-to-original deviation exceeding 15 percentage points. Acceptable explanations: (a) the deviation is the intended result of authorized recalibrations, with references to the specific recalibration records that authorized each component of the deviation; (b) the deviation reflects a Stage 2 specification revision, with reference to the specification revision record; (c) the deviation reflects a foundation model update accepted through the Stage 6 governance process, with reference to the impact assessment. An unexplained deviation of more than 15 percentage points from the original baseline is a gate-blocking finding — the product has evolved beyond its original authorized behavioral profile in a way that has not been traced through governance. The product owner and accountable human must explicitly acknowledge and authorize the cumulative deviation before the gate can close.
+
+**Archive requirement.** The original Stage 4 baseline document is a permanent governance artifact. It is retained for the full regulatory retention period applicable to the product (minimum 10 years for EU AI Act high-risk systems). It must be retrievable at every subsequent gate. A product whose original Stage 4 baseline is no longer retrievable has lost the reference point against which all cumulative drift is measured — a governance finding that must be reported to the Regulatory Owner and documented in the gate record.
 
 **Named evaluation team lead.** A named member of the evaluation team signs the clearance report, accepting accountability for the accuracy of its contents. This is distinct from the product owner's release approval — the evaluation team lead certifies the evidence is what it claims to be; the product owner decides whether the evidence is sufficient to release.
 
@@ -420,6 +474,8 @@ The evaluation agent maintains a behavioral coverage map — a representation of
 **Adversarial Game Model:**
 Adaptive coverage implements an adversarial game between the evaluation agent and the target agent system. The evaluation agent attempts to find behavioral failures; the target agent system (through development iterations) attempts to eliminate them. The game terminates when the evaluation agent cannot find new failures within the coverage budget, indicating behavioral specification compliance.
 
+**Termination constraints by risk level.** Budget exhaustion is not a sufficient termination condition for Critical and High risk-level behavioral contracts. For these contracts, the coverage budget represents the minimum required to reach the confidence threshold — evaluation must continue until the following conditions are both met: (1) confidence ≥ 95% for all Critical contracts that no uncovered failure exists within the defined coverage space; (2) confidence ≥ 90% for all High contracts. Only when both conditions are met may the adversarial game terminate for Critical and High contracts, regardless of budget state. Budget-only termination is permitted for Medium and Low risk-level contracts. An evaluation run that terminates due to budget exhaustion while Critical or High contract confidence thresholds remain unsatisfied is an incomplete evaluation and may not be submitted as gate evidence.
+
 **Coverage Budget Management:**
 Coverage expansion has a cost measured in evaluation and generation capacity. Each sprint defines a coverage budget: maximum number of new evaluation cases to generate. Budget allocation prioritizes: (1) uncovered behavioral contracts, (2) recently modified system prompt or knowledge base regions, (3) behavioral contracts with prior failure history.
 
@@ -444,9 +500,10 @@ Gate-time red-team evaluation (Layer 3) establishes a security posture at the po
 
 | Autonomy Tier | Continuous Red-Team Cadence |
 | --- | --- |
-| Tier 1 (fully autonomous) | Continuous red-team with weekly summary review |
-| Tier 2 (human-on-the-loop) | Monthly continuous red-team cycles |
-| Tier 3 (human-in-the-loop) | Quarterly continuous red-team cycles; gate-time red-team required at each release |
+| Tier 4 (Operate — policy-envelope autonomous) | Continuous red-team with weekly summary review |
+| Tier 3 (Commit — actions produce committed outputs) | Monthly continuous red-team cycles |
+| Tier 2 (Branch — generates options for human decision) | Quarterly continuous red-team cycles; gate-time red-team required at each release |
+| Tier 1 (Observe — observes and reports only) | Gate-time red-team only; no continuous red-team required |
 
 **Red-Team Finding Classification:**
 

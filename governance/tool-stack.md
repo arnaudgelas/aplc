@@ -1,6 +1,6 @@
 # APLC Governance Tool Stack
 
-*Governance infrastructure document for the Agentic Product Lifecycle. Defines the twelve canonical governance tools available to APLC governance agents, their access control constraints, audit requirements, and failure handling protocols. Audience: governance architects, risk officers, and engineering teams implementing governance agent infrastructure.*
+*Governance infrastructure document for the Agentic Product Lifecycle. Defines the thirteen canonical governance tools available to APLC governance agents, their access control constraints, audit requirements, and failure handling protocols. Audience: governance architects, risk officers, and engineering teams implementing governance agent infrastructure.*
 
 *Related documents: [[aplc]] (lifecycle overview), [[agent-behavioral-evaluation]] (Stage 3 evaluation framework), [[agent-operations]] (Stage 5 operational governance), [governance observability](observability.md) (governance process observability), [governance queries](queries.md) (governance query library).*
 
@@ -10,13 +10,13 @@
 
 Governance agents — AI agents that assist APLC stage gate work — operate through a defined set of tools. These tools are not generic capabilities; they are governed interfaces to the APLC Governance Knowledge Base (AGKB), the behavioral evaluation infrastructure, the human-in-the-loop dispatch system, and the audit trail. Uncontrolled tool access by governance agents is a governance failure: an agent that can write to the AGKB without scope constraints, or execute evaluation suites without authorization, or dispatch HITL cases without context packages, is a governance liability, not a governance asset.
 
-This document specifies twelve canonical governance tools. Each tool has a defined purpose, input and output schema structure, authorization scope, and audit requirement. No governance agent may invoke a tool outside its authorized set. No tool may be added to the governance stack without a behavioral specification, authorization policy, and evaluation record. The governance tool stack is itself a governed artifact of the APLC.
+This document specifies thirteen canonical governance tools. Each tool has a defined purpose, input and output schema structure, authorization scope, and audit requirement. No governance agent may invoke a tool outside its authorized set. No tool may be added to the governance stack without a behavioral specification, authorization policy, and evaluation record. The governance tool stack is itself a governed artifact of the APLC.
 
 ---
 
 ## Tool Stack Design Principles
 
-Four principles govern the design and operation of the governance tool stack. They apply to every tool in the stack without exception, and they apply to any future tool added to the stack.
+Five principles govern the design and operation of the governance tool stack. They apply to every tool in the stack without exception, and they apply to any future tool added to the stack.
 
 **Principle of least privilege.** Each governance agent is authorized to invoke only the tools it needs to perform its defined governance function. Authorization is granted by governance role, not by agent identity alone. An agent that performs multiple governance functions holds only the union of the tool authorizations required for those functions — not a superset, not a general authorization. The access control matrix in this document is the reference; any deviation from it requires a documented exception with product owner approval.
 
@@ -26,9 +26,11 @@ Four principles govern the design and operation of the governance tool stack. Th
 
 **Tool failures escalate to human.** No governance agent may silently suppress a tool failure, retry indefinitely without notification, or substitute an alternative tool invocation for a failed one without logging. When a tool fails or returns output outside the expected schema, the governance agent must: log the failure immediately to the AGKB audit trail; notify the responsible human governance overseer; and halt the governance workflow step that depends on the failed tool until the failure is resolved or a human decision to proceed without the tool output is recorded. Governance workflows that proceed past tool failures without a human decision record are invalid governance outputs.
 
+**Tool response boundary enforcement.** Every tool response that enters an agent's context window must pass through a sanitization boundary before it is consumed by the agent. The sanitization boundary validates three properties: (1) schema conformance — the response matches the expected output schema for the tool as recorded in the composite state manifest; (2) provenance labeling — the response carries a provenance tag identifying which tool and invocation produced it, enabling the agent to distinguish tool-sourced content from prompt-sourced content; (3) adversarial pattern screening — the response is checked against a maintained pattern set of known prompt injection and context manipulation patterns before it enters the agent's context. A response that fails any of the three checks is not passed to the agent. The tool infrastructure reports a retrieval integrity failure to the agent, which triggers the agent's escalation protocol rather than producing a response based on a compromised tool output. This principle applies to all tool invocations by all agent products governed under the APLC, not only to governance agent tool invocations.
+
 ---
 
-## The Twelve Governance Tools
+## The Thirteen Governance Tools
 
 ### T01 — Behavioral Specification Reader
 
@@ -198,22 +200,42 @@ Four principles govern the design and operation of the governance tool stack. Th
 
 ---
 
+### T13 — Tool Response Sanitization Boundary
+
+**Purpose.** Enforces the tool response boundary enforcement principle for all tool invocations. Intercepts tool responses before they are passed to the calling agent, validates schema conformance, applies provenance labeling, and executes adversarial pattern screening. Logs all sanitization decisions to the AGKB audit trail.
+
+**Input schema.** Tool invocation identifier (from the pre-invocation audit log entry); raw tool response (the unvalidated response from the tool); tool identifier and version (used to retrieve the expected output schema from the composite state manifest or tool registry); calling agent identity; invocation context (the input that triggered this tool call, used for correlation in the audit log).
+
+**Output schema.** Sanitized response package containing: sanitized response content (the response after provenance labeling and with any schema non-conformant fields removed or flagged); schema conformance result (conformant / non-conformant with field-level detail); provenance label (tool identifier, version, invocation identifier, invocation timestamp); adversarial pattern screening result (clean / flagged with pattern identifier and location); sanitization action taken (pass-through / field-removed / response-blocked). Where the response is blocked, the output package contains a sanitization failure record rather than the tool response content.
+
+**Authorization.** All ten governance agents may invoke T13 for tool responses they receive. For product agents (non-governance agents governed under the APLC), T13 is invoked automatically by the tool orchestration infrastructure — product agents do not invoke T13 directly; T13 is applied to their tool calls at the infrastructure layer.
+
+**Adversarial pattern library.** T13 maintains a versioned adversarial pattern library — a set of known prompt injection patterns, context manipulation patterns, and instruction override patterns. The library is updated when new patterns are discovered through red-team exercises or production adversarial incidents. Pattern library updates are governed as APLC tooling changes per the Stage 6 meta-governance requirements: each update is versioned, the behavioral impact is assessed, and Stage 5 monitoring is notified. The current pattern library version is recorded in the pre-invocation audit log entry for every tool call.
+
+**Schema registry.** T13 maintains a schema registry that maps each tool identifier and version to its expected output schema, derived from the composite state manifest's tool manifest component. When T13 receives a tool response, it retrieves the expected schema for the invoked tool and validates the response against it. Schema validation is strict by default (extra fields are flagged, missing required fields block the response); strict validation may be relaxed to permissive (extra fields allowed, missing optional fields only warned) for specific tool-version pairs through a product owner decision recorded in the schema registry.
+
+**Audit requirement.** Every T13 invocation generates two audit log entries: a pre-sanitization entry (tool identifier, invocation identifier, raw response schema summary, calling agent identity) and a post-sanitization entry (sanitization result, provenance label applied, pattern screening result, final disposition). Both entries are filed to the AGKB audit trail before the sanitized response (or failure record) is returned to the calling agent or infrastructure. Sanitization failures are automatically escalated to the HITL adversarial queue with a 1-hour SLO.
+
+**Failure mode.** If T13 itself fails (unavailable, schema registry unreachable, pattern library unavailable), the tool response must not be passed through unsanitized. The tool orchestration infrastructure must treat T13 failure as a tool failure per the "Tool failures escalate to human" principle: halt the tool-dependent workflow step, log the T13 failure to the AGKB audit trail, and notify the product owner. A T13 failure is a governance infrastructure degradation event; operating without sanitization is not an acceptable fallback. This follows the "severity asymmetry" principle established in Stage 6 meta-governance: a governance system that under-reports problems generates false confidence and is a more severe failure than one that over-reports.
+
+---
+
 ## Access Control Matrix
 
-The matrix below specifies which governance agents are authorized to invoke each tool. Y = authorized; N = not authorized; R = restricted (authorized with additional conditions specified in the tool definition above).
+The matrix below specifies which governance agents are authorized to invoke each tool. Y = authorized; N = not authorized; R = restricted (authorized with additional conditions specified in the tool definition above). T13 is additionally invoked automatically at the infrastructure layer for product agents; the Y entries for governance agents reflect their direct invocation authorization.
 
-| Governance Agent | T01 Reader | T02 Eval Runner | T03 CSH Inspector | T04 Fingerprint | T05 AGKB Writer | T06 AGKB Query | T07 Reg Lookup | T08 Source Monitor | T09 HITL Dispatch | T10 Audit Appender | T11 Sandbox | T12 Incident Writer |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Regulatory Classification Agent | Y | N | N | N | R | Y | Y | N | Y | Y | N | N |
-| Use-Case Elicitation Agent | Y | N | N | N | R | Y | N | N | Y | Y | N | N |
-| Constraint Consistency Checker | Y | N | N | N | R | Y | Y | N | Y | Y | N | N |
-| Behavioral Evaluation Swarm Coordinator | Y | Y | N | N | R | Y | N | N | Y | Y | Y | N |
-| Red-Team Adversary Agent | Y | Y | N | Y | R | Y | N | N | Y | Y | Y | N |
-| HITL Routing Intelligence Agent | Y | N | N | N | R | Y | N | N | Y | Y | N | Y |
-| Behavioral Drift Monitor Agent | Y | N | Y | Y | R | Y | N | N | Y | Y | N | Y |
-| Foundation Model Impact Prediction Agent | Y | N | Y | N | R | Y | N | Y | Y | Y | N | N |
-| Knowledge Staleness Sentinel | Y | N | N | N | R | Y | N | Y | Y | Y | N | N |
-| Retirement Lessons Extraction Agent | Y | N | N | N | R | Y | N | N | Y | Y | N | N |
+| Governance Agent | T01 Reader | T02 Eval Runner | T03 CSH Inspector | T04 Fingerprint | T05 AGKB Writer | T06 AGKB Query | T07 Reg Lookup | T08 Source Monitor | T09 HITL Dispatch | T10 Audit Appender | T11 Sandbox | T12 Incident Writer | T13 Sanitization Boundary |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Regulatory Classification Agent | Y | N | N | N | R | Y | Y | N | Y | Y | N | N | Y |
+| Use-Case Elicitation Agent | Y | N | N | N | R | Y | N | N | Y | Y | N | N | Y |
+| Constraint Consistency Checker | Y | N | N | N | R | Y | Y | N | Y | Y | N | N | Y |
+| Behavioral Evaluation Swarm Coordinator | Y | Y | N | N | R | Y | N | N | Y | Y | Y | N | Y |
+| Red-Team Adversary Agent | Y | Y | N | Y | R | Y | N | N | Y | Y | Y | N | Y |
+| HITL Routing Intelligence Agent | Y | N | N | N | R | Y | N | N | Y | Y | N | Y | Y |
+| Behavioral Drift Monitor Agent | Y | N | Y | Y | R | Y | N | N | Y | Y | N | Y | Y |
+| Foundation Model Impact Prediction Agent | Y | N | Y | N | R | Y | N | Y | Y | Y | N | N | Y |
+| Knowledge Staleness Sentinel | Y | N | N | N | R | Y | N | Y | Y | Y | N | N | Y |
+| Retirement Lessons Extraction Agent | Y | N | N | N | R | Y | N | N | Y | Y | N | N | Y |
 
 **R conditions for T05 (AGKB Writer).** The artifact types each agent is authorized to write:
 
@@ -284,6 +306,8 @@ When a governance tool fails — returns an error, returns output outside its ex
 **T10 (Audit Trail Appender).** If T10 fails, the audit trail integrity is compromised. The governance oversight function must be notified immediately. All governance workflow steps that would produce audit entries must halt. The secondary audit log receives all entries that cannot be appended to the primary trail. Recovery from a T10 failure requires reconciling the secondary log against the primary trail before governance workflows resume.
 
 **T12 (Incident Record Writer).** If T12 fails during an active incident, the incident record must be created manually by the governance oversight function. The governance agent must notify the product owner, the accountable human, and the governance oversight function immediately via all available secondary channels. An incident that cannot be formally recorded is not thereby less urgent; it is more urgent, because its response is now ungoverned.
+
+**T13 (Tool Response Sanitization Boundary).** If T13 fails, the tool response must not be passed through unsanitized under any circumstances. The tool orchestration infrastructure halts the tool-dependent workflow step, logs the T13 failure to the AGKB audit trail, and notifies the product owner. There is no permissive fallback: bypassing sanitization to preserve workflow continuity is not an acceptable response to a T13 failure. A T13 failure is a governance infrastructure degradation event with the same severity as a T10 (Audit Trail Appender) failure. See the T13 tool definition above for the full failure mode specification.
 
 ---
 

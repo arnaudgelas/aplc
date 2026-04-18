@@ -224,6 +224,47 @@ The APLC's stage gates are the implementation vehicle for SR 11-7 compliance in 
 
 ---
 
+### DORA (Digital Operational Resilience Act)
+
+DORA applies to financial entities in the EU and their ICT service providers. For agent products deployed in financial services, DORA has systemic implications that exceed the single mention in the adversarial incident protocol.
+
+**Foundation model providers as ICT third-party service providers.** DORA Article 28 requires financial entities to manage ICT third-party service provider risk. Foundation model providers providing inference APIs to agent products are ICT third-party service providers under DORA. Required contractual provisions under DORA Article 30 include: service level agreements covering availability and performance; notification obligations for material changes, incidents, or discontinuation; audit rights (or participation in pooled audits where individual audit rights are impractical); and an exit strategy specifying how the financial entity can migrate to an alternative provider. The APLC's foundation model provider due diligence requirements (see Foundation Model Provider Due Diligence section below) are the operational implementation of DORA Article 30 requirements for AI-specific ICT third-party risk.
+
+**DORA resilience testing and the APLC red-team protocol.** DORA Article 26 requires advanced financial entities to conduct Threat-Led Penetration Testing (TLPT) at least every three years. TLPT has specific methodology requirements (TIBER-EU framework): threat intelligence phase, preparation phase, and testing phase conducted by qualified external red teams. The APLC's continuous red-team protocol satisfies many TLPT objectives — particularly the coverage of adversarial attack categories — but does not fully satisfy TLPT requirements because: (a) TIBER-EU requires threat intelligence from a Threat Intelligence Provider before testing begins; (b) TLPT testers must be independent external parties; (c) results must be shared with the relevant competent authority. For financial entities subject to TLPT, the APLC's red-team exercises are internal governance activities that supplement but do not replace the TLPT requirement.
+
+**DORA incident classification and reporting timelines.** DORA Article 19 requires major ICT-related incidents to be reported to the competent authority within specific timelines: initial notification within 4 hours of classification as major, intermediate report within 72 hours, final report within one month. The APLC's five incident classes must be mapped to DORA's major ICT incident definition at product deployment time. The following APLC incidents are likely to meet the DORA major ICT incident threshold (requiring reporting): (a) adversarial incidents that compromised the confidentiality or integrity of customer data; (b) behavioral incidents that produced outputs in violation of financial services regulatory requirements; (c) safety incidents that caused financial harm to customers. The Regulatory Owner must perform this mapping at Stage 4 and ensure the incident response protocol includes a DORA notification workflow with the required timelines.
+
+---
+
+### Foundation Model Provider Due Diligence and Contractual Requirements
+
+Foundation model providers are critical suppliers whose behavioral changes the operator does not control. Before deploying an agent product on a foundation model provider, organizations must complete provider due diligence and establish minimum contractual protections.
+
+**Due diligence requirements (pre-deployment).**
+
+1. *Behavioral change notification policy.* Does the provider commit to advance notification of behavioral changes, including changes that do not increment the model identifier? Minimum acceptable: notification of material behavioral changes at least 14 days before they are deployed to production endpoints, with a description of what changed. Providers that reserve the right to update model behavior without notification are high-risk dependencies for governed agent products.
+
+2. *Model retirement notice.* Minimum acceptable: 12 months advance notice before deprecating a model version in active production use. For providers that cannot commit to this minimum, implement CSH-based drift monitoring (weekly sentinel probes) as a compensating control.
+
+3. *Training data practices.* Does the provider train on inference inputs from API customers? If so, is there a contractual opt-out? Inference inputs may contain confidential business information, personal data, and behavioral specification details. Training on these inputs without opt-out creates: (a) confidentiality risk for the information processed; (b) behavioral contamination risk (the provider's model may be influenced by the operator's interactions). For any deployment processing personal data, training data opt-out is a GDPR Article 28 data processing agreement requirement.
+
+4. *Model behavioral change documentation.* Can the organization access documentation of what changed between model versions — at minimum a description of safety filter changes, capability additions, and known behavioral shifts? This information is required for the Stage 6 Foundation Model Impact Prediction Agent to perform meaningful impact assessment.
+
+**Minimum contractual provisions (required before production deployment at Level 4 and above).**
+
+| Provision | Minimum Acceptable Term |
+|---|---|
+| Behavioral change notification | 14 days advance notice for material behavioral changes |
+| Model retirement notice | 12 months for models in active production use |
+| Data processing agreement | Required if processing personal data; must address training data opt-out |
+| Audit rights | Participation in pooled audits at minimum; individual audit rights preferred for critical deployments |
+| Exit strategy | Provider must support a 90-day migration period with continued access to the deprecated model version |
+| Incident notification | Provider notifies customer of security incidents affecting inference API within 24 hours |
+
+**Provider risk tier.** Based on due diligence, assign each foundation model provider a risk tier: Low (meets all minimum provisions), Medium (meets most, compensating controls in place), High (significant gaps, use in production requires accountable human authorization and documented risk acceptance). High-risk providers should not be used for EU AI Act high-risk system deployments or for Tier 4 agent products. A provider's risk tier is recorded in the AGKB alongside the composite state manifest entries that reference that provider.
+
+---
+
 ## APLC Maturity Levels
 
 These maturity levels describe an organisation's governance capability for agent products, not the capability of any individual agent. An organisation at Level 3 has the governance infrastructure to build and release evaluated agent products; it may also have legacy agents deployed before that governance existed.
@@ -289,6 +330,107 @@ These maturity levels describe an organisation's governance capability for agent
 **Key transition criteria from Level 4 to Level 5.** The EU DoC is signed and filed for all applicable high-risk systems. A regulatory examination or audit has been conducted (internal or external) and the APLC documentation was sufficient to demonstrate compliance. At least one agent product has been retired through Stage 7 with full governance — user migration, record retention, decommission confirmation. The post-decommission documentation archive is retrievable and complete.
 
 **What Level 5 does not mean.** Level 5 governance does not mean the agent products are perfect. It means the organisation can demonstrate, with documented evidence, that its agent products were conceived with a validated purpose, specified with a governed behavioral envelope, built and evaluated to a defined standard, released with documented accountability, operated with behavioral observability and drift detection, maintained with governance over planned and unplanned changes, and retired with user migration and record retention. The evidence chain is complete. The accountability chain is traceable. Regulators can examine it.
+
+### Independent Governance Audit Requirements
+
+At Maturity Level 5, governance is self-assessed through the APLC's own gate processes. Self-assessment is necessary but not sufficient for the highest maturity level: governance processes that are assessed only by the people operating them are susceptible to the same institutional drift and capture dynamics that they are designed to prevent in agent products. An independent governance audit provides an external check on whether the APLC is being implemented with genuine intent.
+
+**Annual independent governance audit (required at Level 5).** Conducted by an auditor external to both the product teams and the governance team — no organizational reporting relationship to either, and no financial interest in the product's deployment timelines.
+
+Audit scope:
+1. *Specification authenticity:* for a sample of deployed products, verify that behavioral specifications were authored before the production implementation began (git history, specification version timestamps vs. code commit timestamps). A specification whose version history shows it was written after the code was committed is a post-hoc description, not a governance constraint.
+2. *Gate decision quality:* review gate decision records for evidence of genuine assessment (documented reviewer challenges, amendments from initial drafts, time taken relative to evidence volume). Gate decisions completed implausibly quickly, or with zero documented reviewer challenges, are indicators of ceremony rather than substance.
+3. *Waiver pattern analysis:* examine the waiver history for systematic avoidance patterns — recurring waivers on the same condition types, waiver timelines that systematically match engineering delivery dates, compensating controls that were never actually implemented.
+4. *HITL function effectiveness:* verify that HITL queues are resourced, SLOs are being met, and override rates are being investigated rather than tolerated.
+
+Audit output: a structured findings report filed in AGKB with a governance health rating (satisfactory / requires improvement / inadequate). Inadequate ratings trigger an organizational governance response — not a product-level response.
+
+**Internal cross-team audit (Level 3 and 4 minimum).** For organizations not yet at Level 5, a minimum equivalent: annually, the governance team for Product A reviews the governance records of Product B (a different product, different governance team) and vice versa. This cross-team audit cannot achieve full independence but provides a check on blind spots and shared governance norms that a purely self-assessed process cannot catch.
+
+---
+
+## Governance Team Capacity Requirements
+
+The APLC's governance processes require sustained human attention. An organization that adopts the APLC without adequate governance team capacity will experience governance degradation — gate assessments become ceremonial, HITL queues fall behind SLOs, recalibration cycles are deferred, and specification revisions accumulate in a backlog. Governance capacity is a prerequisite for governance quality.
+
+**Minimum FTE estimates by governance function.** These are approximate baselines for a single agent product at Maturity Level 3–4; scale by portfolio size and complexity:
+
+| Governance Function | Minimum FTE (per product) | Notes |
+|---|---|---|
+| HITL review (quality samples) | 0.1–0.3 FTE | Depends on interaction volume and sample rate |
+| HITL review (safety/adversarial escalations) | 0.05–0.2 FTE | Depends on escalation rate; safety reviews are time-intensive |
+| Gate assessment and documentation | 0.1 FTE | Averaged across the release cycle |
+| Specification authoring and maintenance | 0.2 FTE | Higher during active development; lower in steady-state operation |
+| Evaluation portfolio management | 0.1–0.2 FTE | Includes adaptive coverage management and portfolio updates |
+| Recalibration oversight | 0.05–0.1 FTE | Per recalibration event; averaged across the year |
+| Governance agent oversight and calibration | 0.05 FTE | Shared across portfolio if governance agents serve multiple products |
+
+**Governance capacity metric.** Compute monthly: the ratio of required governance FTE (sum of all functions for all deployed products) to available governance FTE. Monitor this ratio against three thresholds:
+
+- *Normal (ratio ≤ 0.80):* governance team is operating within capacity. No response required.
+- *Elevated (0.80 < ratio ≤ 1.00):* governance team is near capacity. New product conceptions require explicit Portfolio Steward approval. HITL sample rates may be temporarily reduced to the minimum viable level for the lowest-risk products. Portfolio Steward is notified.
+- *Overload (ratio > 1.00):* governance team is over capacity. Required response within 5 business days: halt new product conceptions; reduce evaluation cadence for lowest-risk products to Stage 6 minimum; escalate to the organizational leadership level that commissioned the APLC adoption with a resourcing request and timeline. An organization in overload state for more than 60 consecutive days without a documented resourcing response is in governance capacity failure — a finding that must be disclosed to the Regulatory Owner and included in the next regulatory examination response.
+
+**Governance agent substitution.** Governance agents reduce the human FTE required for specific functions (specification consistency checking, evaluation swarm coordination, drift monitoring). They do not eliminate the human requirement. The minimum human governance FTE for a portfolio of N deployed products at Maturity Level 4 is: 0.5 FTE base + 0.2 FTE per product. This floor represents the irreducible human judgment required for gate decisions, accountability, and escalation response that governance agents cannot provide.
+
+---
+
+## Tier-0 Governance: Research and Low-Stakes Internal Agents
+
+The APLC minimum viable governance path (Level 1 → 2) is designed for agent products with real users and material consequences. Applying this path to research agents, proof-of-concept tools, and internal low-stakes tooling is disproportionate. The absence of an explicit lighter-weight path creates pressure to either over-govern (applying full APLC to a 10-user internal tool) or under-govern (deploying research agents with no governance at all because the full framework appears inaccessible).
+
+**Tier-0 eligibility criteria.** An agent is eligible for Tier-0 governance only if all of the following apply:
+
+- User population: ≤ 50 named internal users (not external, not anonymous)
+- No external user data in the agent's context (no customer PII, no third-party confidential data)
+- No consequential outputs: the agent does not make financial, healthcare, legal, HR, or regulatory recommendations that influence real-world decisions
+- No persistent memory (stateless between sessions)
+- No external tool access beyond read-only internal knowledge bases
+- Deployment context: internal tooling, research, or proof-of-concept only
+
+**Tier-0 governance requirements.** For eligible agents, Tier-0 governance replaces Levels 1–2:
+
+| Stage | Tier-0 Requirement |
+|---|---|
+| Stage 1 | Product brief only (one page: purpose, users, out-of-scope statements). No trust architecture design, no regulatory classification required unless domain suggests otherwise. |
+| Stage 2 | Hard boundaries only (Layer 1 of behavioral envelope). No full behavioral specification required. |
+| Stage 3 | Happy path evaluation for each core use case + 3 adversarial test cases. No four-layer portfolio. |
+| Stage 4 | Deployment checklist (no formal gate). Record: who approved deployment, what it does, who uses it. |
+| Stage 5 | Quality SLO (one metric, one threshold, one alert). No behavioral observability layer required. |
+| Stage 6 | Model update notification monitoring only. |
+| Stage 7 | Deprecation notice to users + data deletion. No formal retirement stage. |
+
+**Tier-0 migration trigger.** An agent that exceeds any eligibility criterion after deployment must migrate to Level 2 minimum governance within 30 days of criteria exceedance. Migration includes retroactively completing Stage 1 and Stage 2 minimum requirements. The migration is a governance event recorded in AGKB with the date of criteria exceedance and the date of Level 2 compliance.
+
+---
+
+## Multi-Party and Platform Deployment Models
+
+The APLC's accountability structure assumes a single organization deploys, operates, and retires the agent product. Many real deployments involve multiple parties with differentiated roles and responsibilities. The following three deployment patterns require explicit governance role assignments before Stage 1 can begin.
+
+### White-Label Deployment
+
+**Structure:** Agent Builder develops and validates the agent product (Stages 1–4). Deployer takes the evaluated agent, configures it for their specific context, and operates it for their end users (Stages 5–6).
+
+**Accountability role split:** Agent Builder holds Technical Owner and Behavioral Owner roles for the core agent product. Deployer holds Business Owner and Regulatory Owner roles for the deployment context, and becomes the EU AI Act "operator" for regulatory purposes. Stage 5 operations governance is Deployer's responsibility; Stage 3 evaluation is Agent Builder's.
+
+**Required governance additions:** (a) A formal role assignment agreement specifying which party holds each APLC accountability role and which party satisfies which EU AI Act obligations; (b) A deployment-specific behavioral specification addendum authored by the Deployer's Behavioral Owner, extending the core specification for the Deployer's specific use case and user population; (c) A data sharing agreement governing AGKB access (the Deployer must have read access to the evaluation evidence they rely on for their regulatory compliance; the Agent Builder must not have access to the Deployer's operational records without contractual authorization).
+
+### Platform-as-a-Service
+
+**Structure:** Platform Operator provides an agent platform (the infrastructure, foundation model access, governance tooling, and a base behavioral specification). Tenants configure the agent for their specific contexts and operate it for their users.
+
+**Accountability role split:** Platform Operator holds Technical Owner role for the platform and co-holds Behavioral Owner for the base specification. Tenants hold Business Owner and Behavioral Owner roles for their configurations, and are the EU AI Act operators for their deployments. Regulatory Owner role is split: Platform Operator for platform-level regulatory compliance; Tenant for deployment-context regulatory compliance.
+
+**Required governance additions:** (a) Tenant-specific behavioral specification addenda that extend the platform's base specification without contradicting its hard boundaries; (b) Tenant-isolated AGKB partitioning — each Tenant's operational records are isolated from other Tenants; (c) Platform-level gate conditions that apply to all Tenants (the platform's base specification gate) and Tenant-level gate conditions that apply to individual configurations.
+
+### Joint Venture
+
+**Structure:** Two or more co-owning organizations jointly commission, develop, and operate an agent product.
+
+**Accountability role split:** Each accountability role must be assigned to a specific named individual in a specific organization. Joint accountability without named individuals is not accountability — it is diffused responsibility. For gate decisions, the gate record must carry sign-off from the named accountable humans in all co-owning organizations, not from a single organizational representative.
+
+**Required governance additions:** (a) A governance agreement specifying role assignments, decision rights (who can make the retire decision? who can authorize a safety-incident rollback without waiting for the other organization's sign-off?), and dispute resolution for governance disagreements; (b) AGKB access and jurisdiction (which organization hosts the AGKB, and which regulatory authority has examination rights over which jurisdiction's records?); (c) A joint waiver policy (both organizations' named representatives must sign any waiver).
 
 ---
 

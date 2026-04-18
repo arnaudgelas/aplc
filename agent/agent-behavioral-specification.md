@@ -50,6 +50,15 @@ Hard boundaries at the product level derive from three sources:
 
 Hard boundaries must be enforced by infrastructure policy, not by prompt instruction. A hard boundary implemented only as a prompt instruction is a soft boundary in practice: it can be overridden by prompt injection, instruction conflict, or context manipulation. For each hard boundary, the behavioral specification must specify the enforcement mechanism: tool removal, permission policy, output filtering, or a combination. See the RE framework's Section 3 for the correct requirement type and Section 7 (security NFR) for the threat model that motivates infrastructure enforcement.
 
+**What "infrastructure enforcement" means technically.** The following mechanisms qualify as infrastructure enforcement; implementations must use at least one of these per hard boundary, and must document which mechanism enforces each boundary in the behavioral specification:
+
+- *Output filtering layer.* A post-generation classifier or rule-based filter that intercepts agent responses before they reach the user and blocks or transforms responses that violate the hard boundary, independent of the model's own refusal behavior. The filter must be maintained and versioned separately from the system prompt.
+- *Tool permission ACL.* A permission policy enforced at the tool invocation layer that prevents the agent from invoking tools or accessing resources that would enable the prohibited behavior, regardless of what the model requests. Permission policies are enforced by the tool orchestration infrastructure, not by prompt instruction to the model.
+- *Sandboxed execution environment.* An execution environment in which the agent has structural inability to take the prohibited action — the capability does not exist in the execution context. For example, an agent that must never write to a production database cannot be given write credentials; the architectural separation is the enforcement mechanism.
+- *Middleware interception.* A middleware layer that validates every agent action against the hard boundary list before execution, rejecting non-compliant actions with an error that triggers the agent's escalation protocol.
+
+A hard boundary implemented exclusively as a system prompt instruction ("you must never do X") is a soft boundary in practice, regardless of language strength. Prompt instructions are overridable by sufficient adversarial pressure, context manipulation, and model updates. For each hard boundary in the specification, the enforcement mechanism must be named, and "system prompt" is not an acceptable answer. Where no technical enforcement mechanism is available for a hard boundary, the boundary must either be elevated to a product architectural requirement (removing the capability entirely) or re-classified as a soft boundary with documented rationale and the compensating controls that substitute for infrastructure enforcement.
+
 **Tier 4 systems — policy envelope as Layer 1 boundary:** For Tier 4 agent products, the policy envelope boundary defined in the Stage 1 trust architecture is a Layer 1 hard boundary. Any agent action that would take the system outside the approved policy envelope is a hard boundary violation — even if the action would otherwise be within the behavioral specification and within the agent's technical capability. The policy envelope's outer constraints must appear explicitly in Layer 1 alongside all other hard boundaries, with the same enforcement requirement: machine-enforced, not prompt-instructed. A Layer 1 entry of the form "The agent must not take actions outside the approved policy envelope [reference: Stage 1 Trust Architecture, Policy Envelope section]" is required for every Tier 4 behavioral specification. The policy envelope as documented in Stage 1 is the authoritative definition — this Layer 1 entry is a reference and enforcement hook, not a re-specification.
 
 ### Layer 2: Soft Boundaries
@@ -84,6 +93,15 @@ Performance targets at the product level must cover at minimum:
 
 **Escalation rate**: the proportion of interactions that trigger escalation. This is both a performance target (too low means the agent is handling cases it should not; too high means the escalation design is misconfigured) and an operational metric (escalation rate in production is a leading indicator of behavioral drift or distribution shift). State both the target rate and the acceptable band.
 
+**Cost envelope.** The behavioral specification must define the cost envelope for the agent product as a required Layer 3 performance target alongside behavioral quality targets. The cost envelope is not optional — it is the economic expression of the product's performance requirements. Required fields:
+
+- *Maximum cost per successful interaction:* the total cost ceiling (foundation model inference + knowledge base retrieval + tool API calls + HITL review allocation) per interaction that achieves a successful outcome, denominated in USD or the organization's accounting currency. Expressed as a hard ceiling, not a target.
+- *Maximum monthly operating cost:* the total product operating cost ceiling per calendar month at the specified interaction volume. This is the Business Owner's economic commitment; it must be signed by the Business Owner at the Behavioral Specification Gate, not at the Operational Readiness Gate.
+- *HITL cost ratio target:* the expected proportion of total operating cost attributable to human review, expressed as a range (minimum: human oversight design requirement; maximum: acceptable overhead). Both bounds must be specified — a ratio below the minimum indicates under-escalation; a ratio above the maximum indicates escalation logic failure or autonomy tier misconfiguration.
+- *FinOps drift alert threshold:* the percentage above the cost envelope baseline at which a cost anomaly alert fires. Default: 20%. The threshold must be pre-committed before production; a threshold set after the first cost anomaly is rationalization, not governance.
+
+A behavioral specification without a cost envelope is incomplete at Layer 3. The Stage 4 Operational Readiness Gate requires a signed cost envelope filed before deployment.
+
 Additional performance targets are required for high-risk EU AI Act systems: accuracy across defined demographic subgroups (Article 10 data governance and Article 15 accuracy requirements), robustness under distribution shift, and response latency at p50/p95 under expected production load.
 
 ### Layer 4: Adaptation Scope
@@ -98,6 +116,18 @@ Specify adaptation scope by answering three questions for each type of state the
 
 **How is learned state governed and audited?** What provenance information is recorded for knowledge base entries? Who can write to persistent memory and under what conditions? What is the retention and expiry policy? How can learned state be rolled back if behavioral drift is detected in Stage 5?
 
+**What cross-session access policy governs the agent's memory?** The behavioral specification must explicitly state whether the same user in session N+1 may access and benefit from memory accumulated in session N of that user. This is not a default — it must be a deliberate design decision with documented rationale. Four configurations must be covered:
+
+*User-scoped persistent memory:* the agent retains memory from prior sessions and uses it to personalize subsequent sessions for the same user. This is the default assumption in most deployments; it must be explicitly specified, not assumed. Specify: what memory categories persist (e.g., user preferences may persist; specific interaction content may not); the maximum retention period; and the GDPR Article 7 lawful basis for this persistence (typically consent or legitimate interest with a proportionality analysis).
+
+*Session-isolated memory:* the agent resets to its initial state at the start of every session, regardless of prior interactions with the same user. This is the most conservative option and requires no cross-session governance. Specify: what constitutes "session start" and "session end"; whether any state (e.g., authentication context) persists between sessions as an exception.
+
+*Opt-in persistent memory:* the agent retains memory only for users who have explicitly opted in. Specify: the opt-in mechanism and how it is reflected in the agent's behavioral context; what happens to memory accumulated before opt-out is exercised (treated as a GDPR erasure trigger).
+
+*Tiered memory:* different memory categories have different cross-session policies. Specify: the cross-session policy for each memory category defined in the memory schema.
+
+Cross-session memory sharing between different users — where one user's sessions influence the agent's behavior in another user's sessions — is prohibited unless explicitly authorized in the behavioral specification's Layer 4 adaptation scope with full privacy impact assessment. This prohibition applies to both direct memory sharing and to aggregate pattern learning that is derived from multiple users' sessions without appropriate anonymization governance.
+
 The RE framework's Layer 4 (adaptation envelope) applies at the component level; this section applies it at the product level, which means the adaptation scope must also account for the user relationship established in Stage 1: an agent in an advisory relationship with potentially vulnerable users has a narrower permissible adaptation scope than an internal tooling agent.
 
 **Tier 4 systems — envelope drift as an adaptation phenomenon:** For Tier 4 agent products, envelope drift is a form of adaptation that must be explicitly governed in Layer 4. If the agent consistently operates near envelope boundaries — taking actions at or approaching the blast radius ceiling, or repeatedly selecting action classes near the edges of the allowed change classes — the effective policy envelope has shifted in practice even if the approved envelope has not changed. The behavioral specification must address three questions for Tier 4 systems:
@@ -107,6 +137,22 @@ How is envelope boundary approach frequency tracked? The specification must defi
 What threshold triggers an envelope review? Specify the numeric threshold at which boundary approach frequency requires escalation to a human steward for envelope review. This threshold feeds directly into the Layer 2 recalibration trigger condition — they must be consistent.
 
 Can the agent adapt its behavior autonomously in response to approaching boundaries? No. Boundary approach must trigger human review, not autonomous behavioral adjustment. An agent that self-modifies its action selection strategy in response to approaching the envelope boundary has effectively modified the policy envelope without approval — which is a Layer 1 violation. The Layer 4 specification must state this explicitly: if boundary approach frequency exceeds the threshold, the agent notifies the human steward and awaits instruction; it does not autonomously alter its selection criteria to move away from the boundary.
+
+### Layer 5: Conversation-Level Behavioral Invariants
+
+Conversation-level behavioral invariants are behavioral properties that must hold across a multi-turn conversation, not just within a single response. They are not a fifth layer of the behavioral envelope in the sense that they constrain individual responses — they constrain response sequences. A product whose single-response behavioral envelope is fully specified but whose conversation-level invariants are undefined is underspecified: an adversary can exploit the conversation dimension to achieve outcomes that no single response would permit.
+
+**Required invariant categories for all agent products with multi-turn capability:**
+
+*Escalation persistence.* Once a hard boundary or escalation trigger has been reached in a conversation, subsequent turns in the same conversation may not de-escalate the decision without explicit human authorization. An agent that escalates a conversation to a human review queue in turn 3 must not resume autonomous operation in turn 5 of the same conversation unless the human reviewer has explicitly closed the escalation.
+
+*Constraint stability under pressure.* The agent's stated limitations and behavioral constraints must not weaken over the course of a conversation in response to user pressure, repeated requests, or incremental reframing. The behavioral specification must state explicitly: "The agent's Layer 1 hard boundaries are not subject to negotiation in conversation; repeated requests for boundary-violating behavior must be declined with consistent responses rather than progressively weakened ones."
+
+*Persona coherence over conversation length.* The agent's persona, voice, and stated identity must remain consistent from the first turn to the last. The behavioral specification must specify what the agent does when it detects that its conversation-level persona coherence is under threat — the escalation design must include persona integrity as an escalation trigger for conversations that have exceeded a defined length while maintaining adversarial pressure.
+
+*Memory boundary at conversation end.* What state, if any, persists from the conversation to future conversations must be specified. The specification must state explicitly which conversation elements the agent is permitted to retain in persistent memory and which must be dropped at conversation end.
+
+**Specification format.** Conversation-level invariants are specified alongside the hard boundaries in Layer 1, with the annotation `scope: conversation` to distinguish them from per-response hard boundaries. They are evaluated in Stage 3 using multi-turn evaluation sequences, not single-turn test cases.
 
 ---
 
@@ -276,6 +322,28 @@ For each dimension, the requirement must be specific: not "the agent must not mi
 
 For EU high-risk systems, the privacy requirements must be consistent with the GDPR and with the AI Act's Article 10 data governance obligations. The behavioral specification is not the place to conduct a GDPR compliance analysis — that belongs in the legal review. The behavioral specification's role is to translate the legal obligations into behavioral requirements the engineering team can implement and Stage 3 can evaluate.
 
+**Special category data protocol.** Agents deployed in contexts where users may disclose special category data — health information, data revealing political opinions, religious or philosophical beliefs, trade union membership, genetic or biometric data, data concerning sex life or sexual orientation — must address the following in the behavioral specification:
+
+*Authorization status.* State explicitly whether the agent is authorized to process special category data, and if so, the Article 9 lawful basis (explicit consent per Article 9(2)(a), employment law per 9(2)(b), vital interests per 9(2)(c), etc.). "Not authorized" is a valid answer and generates a hard boundary.
+
+*Behavioral hard boundary against elicitation.* If the agent is not authorized for a category, the specification must define a hard boundary prohibiting: (a) prompts or conversation patterns designed to elicit special category data from the user; (b) retention of any special category data disclosed beyond the immediate interaction; (c) acting on special category data in a way that changes the agent's recommendations, decisions, or outputs. The hard boundary must specify the enforcement mechanism (output filter, context window sanitization, or both).
+
+*DPIA requirement.* Processing operations involving special category data that are "likely to result in a high risk" require a Data Protection Impact Assessment (DPIA) under GDPR Article 35. The DPIA completion status is a Conception Gate condition for agents where special category data exposure is reasonably foreseeable. A deployed agent that processes special category data without a completed DPIA is in regulatory non-compliance from its first production interaction.
+
+*Detection and response.* The behavioral specification must define what the agent does when special category data is disclosed beyond the authorized scope: graceful acknowledgment without retention, immediate context sanitization, and (where required by the DPIA) a notification to the data controller.
+
+### Explainability Requirements (EU AI Act Article 86)
+
+For agent products deployed in EU high-risk contexts where the agent makes or substantially influences decisions about individuals (as defined by Article 6 and Annex III of the EU AI Act), Article 86 grants affected persons the right to receive a meaningful explanation of the decision. This right has direct behavioral specification implications that must be addressed at Stage 2, not deferred to Stage 4 documentation.
+
+**Explainability as a Layer 1 hard boundary.** The agent must be capable of producing, for any decision subject to Article 86, a human-readable explanation of: (1) the principal factors that led to the decision; (2) the data inputs that were most influential; and (3) the behavioral specification clauses that governed the decision. This capability is not optional for high-risk systems — it is an Article 86 compliance requirement and must be specified as a Layer 1 hard boundary: "The agent must not produce a decision affecting an individual without also producing an explanation that satisfies the Article 86 standard."
+
+**Specification requirements.** The behavioral specification must define: the explanation format (the structure, fields, and level of detail required to satisfy the "meaningful" standard for this deployment context); the trigger conditions for explanation generation (any decision subject to Article 86 generates an explanation automatically, not only when requested); the storage and retrieval mechanism (explanations must be stored and retrievable by the data subject for the retention period applicable to the decision); and the escalation path for cases where an explanation cannot be generated (the agent must escalate to human review rather than issue a decision without an explanation).
+
+**Evaluation requirement.** Layer 3 evaluation must include adversarial test cases where a decision is made without a retrievable explanation — the red-team tests whether the explanation generation can be bypassed. Layer 4 human evaluation must assess whether the explanations produced are "meaningful" against the Article 86 standard for a sample of decisions in the product's use case.
+
+This requirement applies in addition to, not instead of, the GDPR Article 22 automated decision-making requirements specified elsewhere in the APLC. Both sets of rights may be asserted simultaneously for the same decision.
+
 ### Alignment Requirements
 
 Alignment requirements address whether the agent's behavior remains consistent with its stated purpose under conditions that may create pressure to diverge — distribution shift, edge cases not anticipated in Stage 1, adversarial use, or optimization dynamics that favor engagement metrics over user welfare.
@@ -287,6 +355,30 @@ Three alignment requirements apply to all deployed agents:
 **User welfare over engagement**: where the agent has any optimization signal from interaction (implicit feedback, engagement metrics, session length), the behavioral specification must state that user welfare, as defined by the product brief's user model, is the primary optimization target. Engagement metrics are monitored as operational indicators, not as behavioral objectives. This requirement is particularly important for agents in consumer contexts where engagement optimization can diverge from user welfare in non-obvious ways.
 
 **Distribution shift stability**: the agent's behavioral envelope must be maintained under distribution shift. When the production input distribution shifts from the specification-time training distribution, the agent must maintain its hard boundaries and escalate to a human rather than adapt its behavior outside the specification. Distribution shift that causes behavioral drift is detected by Stage 5 monitoring and triggers a Stage 6 recalibration cycle — it is not handled by the agent autonomously.
+
+### Secrets and Credential Management
+
+Secrets — API keys, database credentials, bearer tokens, and any other authentication material used by the agent's tool invocations — are a distinct security surface that the behavioral specification must govern explicitly.
+
+**Hard boundary: secrets must not enter the agent's generative context.** Secrets used by tool invocations must be stored in a dedicated secrets management service (hardware security module, secrets vault, or equivalent infrastructure-level credential store). They must not appear in: the system prompt, any part of the context window visible to the foundation model, the knowledge base, or any memory store. A secret that is visible to the model's generative process is a persistent exfiltration risk for every adversary who can induce the agent to reproduce its context.
+
+**Required specification fields.** The behavioral specification must declare each secret the agent requires by type and purpose: `{secret_type, purpose, rotation_cadence, storage_mechanism}`. The agent may not use credentials that are not declared in the specification — undeclared credential use is a Layer 1 hard boundary violation.
+
+**Evaluation requirement.** The Layer 3 adversarial evaluation must include one test case per declared secret: a structured information extraction attempt designed to elicit the secret value from the agent's output. A passing test confirms the secret is architecturally inaccessible to the model's generative process. A failing test — the agent reproduces a secret value in any form, including partial, obfuscated, or encoded — is a Critical red-team finding blocking release.
+
+**Rotation trigger.** Secret rotation events for credentials referenced in the system prompt require a new system prompt content hash. The rotation event is recorded in the CSH version history as a system prompt component change, triggering the Stage 6 maintenance notification to Stage 5 monitoring.
+
+### Agent-to-Agent Trust in Multi-Agent Deployments
+
+When the agent operates as a component of a multi-agent system — receiving instructions from an orchestrator agent, exchanging messages with peer agents, or passing results to downstream agents — the trust architecture must explicitly classify agent principals alongside user and operator principals.
+
+**Agent principal classification.** The behavioral specification must state, for each class of agent that can send messages to this agent: (1) the principal tier that agent occupies in this deployment's trust architecture; (2) the mechanism by which this agent verifies the instructing agent's identity and authority; and (3) whether an agent principal can claim operator-level authority, and if so, under what conditions and through what verified channel.
+
+**Default position: agent principals occupy user tier.** In the absence of an explicit elevated authorization, messages from agent principals must be treated as user-tier instructions. An orchestrator agent that sends instructions to a subordinate agent does not automatically inherit the authority of the operator who deployed the orchestration system. Operator-tier authority for agent principals must be explicitly granted through the same trust architecture mechanism as for human operator principals, and must be verified at message receipt, not assumed from channel.
+
+**Hard boundary: agent principals cannot grant themselves authority elevation.** A message from an agent principal that claims authority exceeding its designated tier must be treated as a principal impersonation attempt and handled per the principal impersonation protocol in the behavioral specification's escalation design. The agent receiving the message must not act on the claimed elevated authority without independent verification through the trust architecture's authority verification mechanism.
+
+This requirement applies even when the instructing agent is a governance agent operating within the APLC governance framework. Governance agents operate at designated autonomy tiers; their messages do not carry authority beyond those tiers.
 
 ---
 
@@ -367,6 +459,11 @@ constraints:                  ordered list of constraint records
   - violation_severity
 autonomy_tier:                1 | 2 | 3 | 4
 risk_level:                   critical | high | medium | low
+temporal_constraints:
+  rate_limit:               max_invocations_per_window (integer) + window_seconds (integer)
+  turn_limit:               max_conversation_turns_before_escalation (integer | null)
+  time_bounded_behaviors:   list of {active_condition: string, behavior_override: string}
+  accumulation_limit:       max_actions_before_mandatory_review (integer | null)
 evaluation_template:
   layer_coverage_required:    list of required evaluation layers, e.g. [1, 2, 3, 4]
   minimum_case_count:         integer
@@ -378,7 +475,19 @@ monitoring_rules:
   hitl_escalation_triggers:   list of condition expressions
 ```
 
+**Temporal constraint fields.** `rate_limit` bounds the agent's invocation frequency — required for any agent that could cause harm through repetition (e.g., an agent sending notifications must not send more than N per hour). `turn_limit` specifies the maximum conversation length before mandatory escalation — required for any agent where long conversation accumulation is a known behavioral risk. `time_bounded_behaviors` defines behaviors that activate only under specified conditions (e.g., different behavior during business hours vs. after hours). `accumulation_limit` defines the maximum number of consecutive autonomous actions before a mandatory human review checkpoint — required for Tier 4 agents. All temporal constraint fields must be specified for Critical and High risk-level contracts; they are optional for Medium and Low risk-level contracts unless the behavioral specification analyst determines that temporal dynamics are relevant to the contract's safety properties.
+
 The `constraint_expression` field is a machine-parseable predicate — a logical expression that can be evaluated against a candidate output. The `violation_severity` field maps to the findings classification in `agent-behavioral-evaluation.md`: Critical, High, Medium, or Low. The `layer_coverage_required` field maps directly to the four-layer evaluation portfolio structure, eliminating the manual step of translating a risk classification into an evaluation scope.
+
+**Constraint Expression Language Specification.** The `constraint_expression` field must be authored in one of the following three forms, listed in order of preference:
+
+*Form 1 — JSON Schema predicate (preferred for output structure constraints).* A JSON Schema object that validates against the agent's response structure. The expression is satisfied if the response, when serialized as a JSON object with the fields defined in the agent's output schema, validates against the JSON Schema predicate. Example: `{"properties": {"confidence": {"maximum": 0.7}}, "required": ["confidence"]}` expresses the constraint that a response must include a confidence field with value ≤ 0.7.
+
+*Form 2 — Named classifier reference (preferred for semantic constraints).* A reference to a named, versioned classifier function registered in the AGKB evaluation suite definitions: `classifier:<classifier_id>:<version>`. The classifier is a function that takes the agent's response as input and returns a boolean. The constraint is satisfied if the classifier returns true. The classifier must be independently evaluated before it can be registered, and its evaluation must be included in the behavioral specification gate evidence.
+
+*Form 3 — Natural language with structured decomposition (when Forms 1 and 2 are not applicable).* A natural language statement that is accompanied by a mandatory structured decomposition: `{"statement": "<natural language>", "detection_method": "<one of: output_filter | human_reviewer | automated_classifier>", "test_oracle": "<description of how a test case can produce a definitive pass or fail determination>"}`. Form 3 expressions require a named human reviewer in the evaluation clearance report; they may not be evaluated by automated means alone.
+
+A behavioral contract with a `constraint_expression` in an unspecified format is not a machine-executable contract. The Constraint Consistency Checker governance agent must reject contracts with unparseable constraint expressions and return a structured error identifying the field and the violation.
 
 ### Auto-Derivation Protocol
 
@@ -519,5 +628,23 @@ When a specification review is triggered, the following process governs its exec
 7. **AGKB publication.** The updated specification is published to AGKB with a version increment. The version record captures: the trigger that initiated the review, the Behavioral Owner who approved the scope, the contracts changed, and the mini gate assessor's name and date. All downstream projections derived from the affected contracts — evaluation case templates, monitoring rules, gate criteria — are automatically re-derived from the updated machine-readable fields.
 
 A specification review initiated by a regulatory change or a foundation model update may, upon the Behavioral Owner's assessment, determine that the scope of required changes is large enough to constitute a material specification revision. In that case, the mini gate is replaced by a full Behavioral Specification Gate, and Stage 3 evaluation must be re-run against the updated specification before the next release proceeds.
+
+### Annual Specification-to-Brief Coherence Review
+
+Individual specification revisions are governed by the review process above. The cumulative effect of many governed revisions can produce a specification that has drifted materially from the Stage 1 product brief without any single revision being out of compliance. The annual coherence review detects this cumulative drift.
+
+**Cadence.** Once per calendar year for all deployed agent products, or immediately following any material specification revision that the Behavioral Owner assesses as potentially affecting the brief's premises.
+
+**Scope.** Compare the current behavioral specification against the original Stage 1 product brief on four dimensions:
+
+1. *Business purpose alignment.* Does the specification's declared scope and behavioral design still serve the validated business purpose from Stage 1? Additions, extensions, or scope creep that were individually approved but collectively represent a different product require a Stage 1 review.
+
+2. *User model consistency.* Do the behavioral requirements still reflect the Stage 1 user model — the same population, relationship type, trust scope, and vulnerability profile? Specification revisions that effectively serve a different user population require a Stage 1 revision of the user model before being incorporated into the specification.
+
+3. *Trust architecture coherence.* Are all current behavioral constraints traceable to the Stage 1 trust architecture? Constraints added during recalibration without traceability to Stage 1 are either correctly derived from the trust architecture (and the trace should be documented) or represent scope expansion that requires Stage 1 review.
+
+4. *Regulatory classification consistency.* Have specification revisions created behavioral capabilities that affect the Stage 1 regulatory classification? An agent that has acquired new tool access, expanded its interaction scope, or moved into new decision-making territory since Stage 1 may have changed its EU AI Act risk classification without a formal Stage 1 review.
+
+**Outcome.** The coherence review produces a structured record: one finding per dimension (consistent / diverged-within-tolerance / material-drift). A "material-drift" finding on any dimension triggers a Stage 1 review — not a Stage 2 revision. The gap is at the conception level. The coherence review record is filed to AGKB alongside the behavioral specification version record.
 
 *See also: `companion-re-framework.md` (single-source principle, probabilistic assurance target format), `agent-behavioral-evaluation.md` (evaluation portfolio structure and probabilistic gate decisions), `agent-operations.md` (HITL four-channel learning and Knowledge Staleness Sentinel), `agent-maintenance.md` (foundation model update governance), `aplc.md` (governance agent participation framework and gate integration).*

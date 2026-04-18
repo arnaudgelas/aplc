@@ -305,6 +305,54 @@ At the Operational Readiness Gate for multi-tenant or multi-region deployments:
 
 ---
 
+## Multi-Agent Swarm Governance
+
+When two or more agent products operate together — an orchestrator directing subordinate agents, peer agents exchanging information, or a collection of specialized agents cooperating on a common task — their joint behavioral state requires governance that neither individual agent's APLC governance provides. Individual agent APLC governance specifies and evaluates each agent's behavior in isolation. Swarm governance specifies and evaluates the joint system's emergent properties.
+
+### Swarm-Level Behavioral Specification
+
+For any deployment where two or more governed agent products interact autonomously, a **swarm behavioral specification addendum** is required in addition to each individual agent's behavioral specification. The addendum specifies:
+
+**Swarm-level hard boundaries.** Behavioral properties that no combination of individually in-specification agent actions may violate. These are emergent constraints that do not follow from any individual agent's specification: for example, a constraint that the combined blast radius of all agent actions within a single task execution may not exceed a ceiling, even if each individual action is within its agent's individual blast radius limit.
+
+**Swarm-level blast radius ceiling.** The maximum aggregate consequence of all agent actions taken as part of a single coordinated task, computed across all participating agents. This ceiling is defined at the swarm level, not derived by summing individual agent ceilings — the sum of individually acceptable actions may produce an unacceptable aggregate.
+
+**Coordination failure mode specifications.** The swarm behavioral specification must specify the agent's required behavior in the following coordination failure modes: (a) *Deadlock:* two or more agents are mutually waiting on each other and cannot proceed without external intervention — specify the detection mechanism and timeout after which a designated agent initiates escalation; (b) *Oscillation:* two or more agents cycle through incompatible decisions — specify the detection mechanism (N cycles within a defined window) and the required halt-and-notify response; (c) *Cascade:* one agent's failure or unexpected output propagates to dependent agents — specify which agents are downstream dependencies of which, and what isolation mechanism prevents a single agent failure from propagating to the full swarm.
+
+**Agent-to-agent trust specification.** The swarm behavioral specification must define the principal tier that each participating agent occupies when sending instructions to other agents. The default is user-tier; operator-tier authority for agent principals requires explicit grant through the same trust architecture mechanism as human operator principals. The specification must state the identity verification mechanism by which a receiving agent confirms the instructing agent's identity and authority tier.
+
+### Swarm Composite State Hash
+
+A swarm of N agents has N individual CSH values. The swarm-level composite state is captured by the **Swarm State Hash (SSH)**: a hash over the ordered set of individual CSH values of all participating agents:
+
+```
+SSH = hash(CSH_agent_1 || CSH_agent_2 || ... || CSH_agent_N)
+```
+
+Where agents are ordered canonically (e.g., by agent identifier, alphabetically). The SSH changes whenever any participating agent's CSH changes. The SSH is the starting point for swarm-level incident investigation: an incident in a multi-agent deployment begins with recovering the SSH at the incident time and comparing it against the release-baseline SSH.
+
+### Swarm-Level Evaluation
+
+The behavioral evaluation portfolio for a multi-agent deployment must include a swarm-level evaluation layer in addition to each individual agent's four-layer portfolio:
+
+**Swarm Layer S1 — Coordination correctness.** Deterministic evaluation of the swarm's task coordination: do agents correctly hand off tasks, share relevant context, and terminate coordination when tasks complete? This layer corresponds to Layer 1 engineering evaluation at the swarm level.
+
+**Swarm Layer S2 — Emergent behavioral coverage.** Probabilistic evaluation of swarm-level behavioral properties against the swarm behavioral specification. Specifically tests: swarm-level hard boundaries (does any task execution sequence violate the swarm blast radius ceiling?), coordination failure mode handling (does deadlock/oscillation/cascade produce the specified response?), and the trust architecture (does agent-to-agent instruction flow respect the defined authority tiers?).
+
+**Swarm Layer S3 — Inter-agent adversarial evaluation.** Structured adversarial testing of the swarm's inter-agent attack surface, including: orchestrator compromise, peer contamination, aggregated multi-turn manipulation, and authority impersonation via agent channel. See the Inter-Agent Injection attack category in `agent-behavioral-evaluation.md` for the full protocol.
+
+### New Swarm Incident Classes
+
+Multi-agent deployments experience three incident classes in addition to the five classes defined for individual agents. These swarm-specific classes supplement, not replace, the individual agent incident classification:
+
+**Coordination Incident.** Two or more agents have entered a coordination failure state (deadlock, oscillation, or cascade) that has halted or degraded the swarm's function. Detection: coordination failure mode monitoring; failure to produce a task result within the defined timeout window. Response: halt the affected coordination chain, escalate to the accountable human, investigate the trigger.
+
+**Swarm Boundary Incident.** The aggregate output of two or more agents' actions has exceeded the swarm-level blast radius ceiling defined in the swarm behavioral specification, even if each individual agent's actions were within its individual specification. Detection: aggregate action consequence monitoring. Response: halt further swarm action on the affected task; accountable human review before continuation.
+
+**Trust Propagation Incident.** An agent has acted on instructions from another agent that claimed authority exceeding its designated principal tier. Detection: principal tier monitoring on inter-agent messages; authority verification failure logs. Response: halt the affected agent's task execution; investigate the source of the authority claim; treat as an adversarial incident pending investigation.
+
+---
+
 ## Governance Knowledge Base Integration
 
 All APLC lifecycle artifacts are stored in and retrieved from the APLC Governance Knowledge Base (AGKB). The AGKB is the authoritative source of record for all governance decisions, behavioral specifications, evaluation results, and operational governance data.
@@ -319,3 +367,11 @@ AGKB integration points by stage:
 - **Stage 7 Retire:** lessons-learned entries, behavioral footprint record, retirement decision record
 
 Full AGKB architecture and governance is specified in [governance/knowledge-base.md](governance/knowledge-base.md).
+
+**APLC Framework Version Governance.** The APLC governance framework is itself a versioned artifact. Each version of the framework is recorded as an APLC Framework Version Record in the AGKB (Category D). Every gate decision record references the framework version active at the time of the decision. When the framework is updated, the transition policy in the new version record specifies how in-flight products are affected:
+
+- *Prospective application (default):* the new framework version applies at the next gate decision for each product. Gate decisions already recorded under prior versions are not retroactively invalidated. This is the default transition policy for minor revisions.
+- *Immediate application:* the new version applies to all open gate assessments and active stage activities immediately. Reserved for revisions that address Critical safety or compliance gaps — the urgency of the gap outweighs the disruption of mid-stage framework changes.
+- *New product inception only:* the new version applies only to products conceived after the effective date. In-flight products complete their lifecycle under the version active at their Conception Gate. Reserved for major framework revisions that are architecturally incompatible with in-flight product structures.
+
+Organizations adopting the APLC must designate a named APLC Framework Steward responsible for: versioning the local APLC implementation, publishing transition policies when framework revisions occur, and maintaining the APLC Framework Version Records in the AGKB. The Framework Steward is distinct from individual product Behavioral Owners — they are accountable for the governance infrastructure itself, not for individual products.

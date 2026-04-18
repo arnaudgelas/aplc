@@ -63,6 +63,14 @@ When a provider update notification is received, the immediate assessment questi
 
 A CSH change detected in operational monitoring that corresponds to no operator-initiated change is a silent model update until proven otherwise. Investigate immediately using the incident investigation protocol in [agent-composite-versioning.md](agent-composite-versioning.md). Do not assume the CSH change is a monitoring artifact; assume it is a real behavioral state change and require evidence to close the assumption.
 
+**Behavioral probe-based detection for silent behavioral updates.** The `date_confirmed` field and CSH monitoring address silent model updates that change the model identifier. They do not address updates that change the model's behavior without changing its identifier — a documented practice with hosted AI models. For these updates, behavioral probe-based detection is required as a supplementary control.
+
+Weekly, execute the sentinel probe set (a designated 20-probe minimum subset of the behavioral fingerprint probe set) against the live production model. The sentinel probe set is designated at Stage 2 in the behavioral specification and is selected to maximize sensitivity to behavioral changes across: hard boundary compliance, uncertainty expression calibration, persona consistency, and the use cases most critical to the agent's specification. Probe responses are compared against the release baseline fingerprint. A shift in the response distribution for any probe that exceeds the drift threshold defined in the behavioral specification is treated as a probable silent model update.
+
+When a behavioral probe detection alert fires without a corresponding CSH change: (1) treat the alert as a probable provider-initiated behavioral update; (2) immediately run the full Layer 2 and Layer 3 behavioral evaluation portfolio against the current model; (3) if the portfolio reveals behavioral changes outside the specification, initiate the rejection procedure, including consideration of model pinning to the last confirmed behavioral state; (4) file a model update record in the version history with event type `model-update`, `provider-initiated` flag, and a note that the update was detected by behavioral probing rather than CSH monitoring; (5) update `date_confirmed` to reflect the probe date.
+
+The weekly probe cadence is a minimum. For Tier 4 agents, daily sentinel probe execution is required.
+
 ### Behavioral Regression Testing
 
 For every notified model update affecting a deployed agent product, run the full behavioral evaluation portfolio against the updated model before accepting the update in production. This is not optional for agent products — it is the only mechanism available for determining whether a provider update has changed behavior within or outside the behavioral specification. There is no diff to read. There is no code change to inspect. There are only the evaluation results, and without them the operator has no basis for the accept/reject decision.
@@ -173,6 +181,18 @@ A content addition that passes editorial review (the content is accurate, releva
 
 Each version of the knowledge base has a snapshot identifier in the composite state manifest, a document count, and a source manifest hash. Every content addition must generate a new snapshot, a new manifest entry, and a new CSH. Content additions are component changes and must be recorded in the version history with the standard required fields.
 
+### Knowledge Base Integrity Verification
+
+Knowledge base content must not only be versioned (to detect what changed) but verified (to detect whether content has been tampered with since ingestion).
+
+**At ingestion.** Every document added to the knowledge base is assigned a content hash at the time of ingestion: `document_hash = SHA-256(canonical_document_content)`. This hash is stored in the Knowledge Source Registry alongside the document identifier, source version, and ingestion timestamp. The canonical document content is the full document text in a defined canonical form (whitespace-normalized, metadata stripped) to ensure hash stability across minor formatting changes.
+
+**At retrieval.** When a document is retrieved for inclusion in the agent's context, the retrieval infrastructure recomputes the document hash and verifies it against the stored ingestion hash. A mismatch means the document has been modified since ingestion — either through a legitimate update (which should have been recorded as a new document version with a new hash) or through unauthorized modification.
+
+**On hash mismatch.** A retrieval integrity failure (hash mismatch) is treated as a behavioral incident of the Adversarial class. The specific response: (1) the document is excluded from the retrieval result and replaced with a staleness notification in the agent's context; (2) the retrieval integrity failure is logged to AGKB as an incident record; (3) the product owner and Technical Owner are notified within 1 hour; (4) the knowledge base is taken offline for the affected document categories pending investigation of whether the modification was authorized, unauthorized, or erroneous.
+
+**Integrity verification in the composite state manifest.** The `source_manifest_hash` field in the knowledge base component of the composite state manifest captures the document list — it does not capture per-document content integrity. The per-document content hashes are stored in the Knowledge Source Registry. Both records are required: the source manifest hash confirms the scope of the knowledge base; the per-document hashes confirm the content has not been modified. A composite state manifest without corresponding per-document hashes in the Knowledge Source Registry is incomplete from an integrity perspective.
+
 ### Knowledge Base Version Control
 
 The composite state manifest records the knowledge base snapshot ID and source manifest hash, providing point-in-time reconstruction. But the version history of the knowledge base itself — the ordered record of what was added, removed, or modified, by whom, and why — must be maintained in the knowledge base management system, not reconstructed from composite state manifests.
@@ -240,6 +260,25 @@ Expiration policies by category:
 Expired memory items are removed at the next scheduled memory maintenance window, not immediately upon expiry. The removal generates a new CSH and a composite state manifest update if the memory state hash changes materially. Define materiality for this purpose: a routine expiration of a small number of user preference items may not warrant a full manifest update; a bulk expiration affecting a significant portion of the memory corpus does.
 
 **Domain scoping.** Memory is not shared across principals without explicit governance authorization. User-specific memory items are scoped to that user. Operator-specific configuration memory is scoped to the operator deployment. Cross-user pattern learning — aggregate heuristics derived from multiple users — must be explicitly authorized in the behavioral specification's Layer 4 adaptation scope, with the privacy requirements from [agent-behavioral-specification.md](agent-behavioral-specification.md) governing what user data may contribute to cross-user learning. A memory architecture that implicitly shares user-specific context across users is a privacy violation regardless of whether the sharing was intentional.
+
+### Memory Semantic Drift Detection
+
+Memory volume and category distribution monitoring (Stage 5 memory write anomaly detection) identifies structural anomalies in memory accumulation. It does not detect semantic drift — a gradual shift in the semantic content of memory items within normal operational parameters. An adversary who systematically injects subtle behavioral preferences through many individually innocuous interactions can shift the agent's behavioral center of gravity without triggering volume or category anomaly detectors.
+
+**Detection methodology.** At the frequency defined in the memory review cadence (monthly for high-interaction deployments, quarterly for moderate), conduct a semantic analysis of the memory corpus against the behavioral specification:
+
+1. Draw a representative sample of memory items from the current corpus (minimum sample size: the larger of 200 items or 5% of the corpus).
+2. Compute embeddings for the sampled memory items using the same embedding model as the agent's retrieval system.
+3. Compute the centroid of the sample embedding — the center of mass of the memory corpus's semantic content.
+4. Compare the centroid against two reference points: (a) the release-baseline memory centroid (established at Stage 4 from the initial memory state or the most recent full memory reset); (b) the behavioral specification's use-case coverage map centroids (the semantic center of each use-case zone, computed from the behavioral specification content).
+
+**Drift classification.** Two types of semantic drift require response:
+
+*Boundary drift:* the memory centroid has moved toward a behavioral specification boundary — toward content areas associated with hard boundary proximity or out-of-scope use-case zones. Boundary drift is a High severity finding regardless of magnitude. It suggests the memory corpus is accumulating adversarially introduced content or content that systematically biases the agent toward boundary-approaching behavior. Response: targeted memory review of the highest-weight items in the boundary-adjacent region of the corpus; partial reset if targeted review confirms adversarial patterns.
+
+*Specification drift:* the memory centroid has moved significantly from the release baseline but within the behavioral specification's boundaries. Specification drift is a monitoring finding requiring Stage 6 review. It may represent legitimate learning (the agent has accumulated context that makes it more effective in its primary use cases) or unintended learning (the agent has accumulated context from interactions outside its primary use cases). The Stage 6 review determines which and whether a targeted memory review or reset is warranted.
+
+**Implementation requirement.** The semantic drift detection methodology requires: (a) embedding computation capability using the same model version as the agent's retrieval system; (b) storage of the release-baseline memory centroid as a governance artifact in AGKB (alongside the release-baseline behavioral fingerprint); (c) computation of use-case coverage map centroids from the behavioral specification at Stage 2, stored in AGKB. The baseline centroid is recomputed after each authorized full or partial memory reset, in the same way that the behavioral baseline is recomputed after each recalibration.
 
 ---
 
@@ -325,6 +364,24 @@ The intake record is the authoritative governance artifact for the erasure reque
 1. **Memory Audit.** The agent system's memory state is audited to identify all records attributable to the data subject. Audit must cover: episodic memory (conversation history and session summaries), semantic memory (derived associations and learned preferences), and working memory snapshots retained from prior sessions. The audit output is a complete list of identified records with their storage location, record type, and data category.
 
 2. **Erasure Execution.** All identified records are deleted from the memory state. If the memory is a vector store or embedding space, embeddings derived from the subject's data are removed. Where vector stores do not support surgical deletion of specific embeddings, the affected index partition must be rebuilt excluding the subject's records. Erasure is verified by re-running the memory audit against the post-erasure state and confirming zero records are returned.
+
+### Reference Architecture: GDPR-Compliant Memory Design
+
+The vector store rebuild approach to GDPR erasure does not scale to deployments with frequent erasure requests or large user populations. The APLC reference architecture for GDPR-compliant persistent memory separates personal data storage from the embedding index, enabling individual erasure without index reconstruction.
+
+**Architecture components:**
+
+*Personal data store.* A structured database (relational or document store) that holds the full content of memory items, including any personal data. Each record has a unique memory item identifier and is keyed by user/data-subject identifier, enabling efficient lookup and deletion per data subject. This store is subject to GDPR retention schedules and erasure obligations.
+
+*Anonymized embedding index.* A vector store that holds only the embeddings of memory items, indexed by the memory item identifier (not by the personal data content). The embeddings are computed from the content in the personal data store at write time and stored without the content itself. The embedding index does not contain personal data as defined by GDPR (assuming the embedding function is not reversible, which must be verified for each embedding model used).
+
+*Erasure protocol.* On a GDPR erasure request: (1) delete all records from the personal data store for the data subject identifier; (2) remove the corresponding embeddings from the vector index by their memory item identifiers — this is efficient (lookup by identifier, not by content similarity); (3) recompute the CSH memory component hash; (4) issue the erasure certificate. Index reconstruction is not required.
+
+*Retrieval.* At retrieval time, the vector store returns the memory item identifiers of the most semantically relevant embeddings. The retrieval infrastructure fetches the corresponding content from the personal data store using those identifiers. If a content fetch fails (the item has been erased), the embedding is excluded from the result set and flagged for deferred removal from the index.
+
+**Adoption requirement.** New agent products with persistent memory deployed after this document revision must adopt this architecture or an equivalent that demonstrates equivalent GDPR compliance characteristics. Existing products with persistent memory must include architecture migration to the reference pattern in their next recalibration cycle plan.
+
+**Derived memory items.** Memory items derived from other memory items (e.g., summaries derived from interaction content) must have their derivation chain recorded in the personal data store. On erasure of a source item, derived items that depend exclusively on the erased source are erased as part of the same erasure operation. Derived items that depend on multiple sources require a human-reviewed proportionality assessment: can the derived item be retained without the specific erased source? The Regulatory Owner makes this determination and records it in the erasure intake record.
 
 3. **CSH Impact Assessment.** Deletion from memory state changes the `memory_state` component of the Composite Agent State, which changes the CSH. The CSH change must be documented as an authorized maintenance action, not as a behavioral drift event. The erasure event type in the version history is `memory-reset` with a notation that the trigger is a GDPR erasure request (using the intake record identifier, not the data subject's identity). See [agent-composite-versioning.md](agent-composite-versioning.md) for the version history entry format.
 

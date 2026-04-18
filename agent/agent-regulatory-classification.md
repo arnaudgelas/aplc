@@ -112,6 +112,23 @@ Having completed Steps 1 through 3, the classification outcome is one of: prohib
 
 The conformity assessment path must be determined at Stage 1 and documented in [agent-conception.md](agent-conception.md). If the path requires a notified body, the engagement timeline must be incorporated into the Stage 4 release plan — notified body review has lead times that cannot be compressed at the last moment.
 
+### Conformity Assessment Path Selection Criteria
+
+The EU AI Act distinguishes between self-assessment (Annex VI) and third-party conformity assessment (Annex VII) paths. The choice between them is not discretionary — specific criteria determine which path applies. These criteria must be evaluated at Stage 1 and documented in the regulatory classification record before Stage 2 begins.
+
+**Mandatory third-party assessment (Annex VII) triggers.** Third-party assessment is required when any of the following conditions apply:
+
+1. *Annex III, Point 1 (biometric identification and categorisation):* any agent product that falls within the biometric identification and categorisation category of Annex III requires third-party assessment. There is no self-assessment path for this category.
+2. *Critical infrastructure (Annex III, Point 2):* agent products in critical infrastructure management and operation require third-party assessment.
+3. *No harmonised standards available:* where no harmonised standards have been published for the specific Annex III category applicable to the agent product, and the deployer intends to use the self-assessment path, third-party assessment is required unless the deployer can demonstrate compliance with the general requirements of the Act through alternative means. If harmonised standards for the relevant category have not been published, the deployment timeline must account for the third-party assessment pathway.
+4. *Organizational conflict of interest:* if the organisation deploying the agent product lacks the internal technical competence to conduct a credible self-assessment — specifically, if the same team that built the system is the team that would conduct the conformity assessment without independent technical review — third-party assessment is required to ensure the assessment's integrity.
+
+**Self-assessment eligibility (Annex VI).** Self-assessment is permitted when: (a) the Annex III category applicable to the product is not listed in the mandatory third-party triggers above; (b) harmonised standards for the relevant category are available and the deployer can demonstrate compliance; and (c) the deployer has documented internal technical competence to conduct the assessment, including at minimum a named qualified assessor who is independent of the development team.
+
+**Documentation for self-assessment justification.** When self-assessment is chosen, the regulatory classification record must include: the Annex III category, the harmonised standards being applied, the identity and qualifications of the internal assessor, and a statement that no mandatory third-party trigger applies with specific justification for each trigger condition. A self-assessment conducted without this documentation is not a valid conformity assessment.
+
+**Staged self-assessment.** For organisations making their first high-risk AI deployment, a staged approach is recommended: conduct an internal self-assessment using the Annex VI procedure, then engage a notified body for an informal technical review (not a formal Annex VII assessment) to validate the self-assessment methodology before filing the EU Declaration of Conformity. This reduces the risk of a self-assessment that would not survive formal regulatory scrutiny without incurring the full cost of mandatory third-party assessment.
+
 ---
 
 ## Technical Documentation Requirements (Annex IV)
@@ -151,6 +168,26 @@ The three Article 22 requirements map to specific APLC design obligations:
 **Prohibition on solely automated decisions in specific contexts.** Article 22(4) prohibits solely automated decisions based on special category data (genetic data, health data, racial or ethnic origin, political opinions, religious beliefs, sexual orientation, and related categories) except where the individual has given explicit consent or where Member State law provides for it. The prohibition is not limited to decisions that produce legal effects — it applies to any significant effect. For agent products in financial services, healthcare, insurance, and HR, this prohibition is the binding constraint: if the agent's decisions are based on special category data and the decision is significant, a human must be in the decision loop — not available on request, but actually in the loop for every decision of that type. This requirement must be encoded in the trust architecture defined at Stage 1 in [agent-conception.md](agent-conception.md). It cannot be added at Stage 5 without revisiting the trust architecture.
 
 Document the Article 22 scope determination at Stage 1: which of the agent product's decisions are within Article 22 scope, which involve special category data, and what the mandated decision path is for each. These determinations are design inputs to Stage 2, not compliance footnotes added at Stage 4.
+
+---
+
+## EU AI Act Article 86 — Right to Explanation
+
+Article 86 of the EU AI Act grants affected persons the right to obtain an explanation of decisions made by high-risk AI systems when those decisions produce legal effects or similarly significant effects concerning them. This right has substantive design implications that must be identified at Stage 1 and carried through as architectural requirements.
+
+**Classification assessment.** During regulatory classification, assess whether the agent product: (a) makes decisions or provides information that substantially influences decisions about individuals; (b) those decisions produce legal or similarly significant effects (credit assessments, employment screening, healthcare recommendations, benefits eligibility, insurance pricing, educational assessments); and (c) the agent's decision-making process is not already transparent through other means. If all three conditions apply, Article 86 obligations are active.
+
+**Mandatory compliance elements for Stage 1 and Stage 2.**
+
+*Stage 1 (Conception Gate):* the product brief must explicitly state whether Article 86 applies to this deployment. If it applies, the trust architecture must specify: (1) the channel through which data subjects may request explanations; (2) the format of explanations (what fields, what language level, what timeframe for provision); and (3) the mechanism for explanation storage and retrieval (explanations must be retained and retrievable for the retention period applicable to the governed decision).
+
+*Stage 2 (Behavioral Specification Gate):* the behavioral specification must include Article 86 compliance as a Layer 1 hard boundary: "The agent must not issue a decision subject to Article 86 without generating a contemporaneous, structured explanation record." The explanation record schema must be defined in the specification with the following minimum fields: decision identifier, decision type, principal factors (ranked by influence on the decision outcome), data inputs used, behavioral specification clauses that governed the decision, and the confidence or certainty level of the decision.
+
+**What constitutes a "meaningful explanation" under Article 86.** The APLC does not prescribe the explanation content beyond the minimum schema above — "meaningful" is assessed relative to the nature of the decision and the affected person's reasonable ability to understand and contest it. The behavioral specification author must consult the EU AI Office guidance on Article 86 implementation and document how the proposed explanation format satisfies the "meaningful" standard for this specific decision type and user population.
+
+**Interaction with GDPR Article 22.** Article 86 and GDPR Article 22 overlap but are not identical. Article 22 governs purely automated decision-making and provides a right to human review; Article 86 governs explainability of AI decisions more broadly. A deployment subject to GDPR Article 22 must satisfy both — the explanation provided under Article 86 is not the same as the human review provided under Article 22, and both must be separately designed and verified.
+
+**Regulatory classification record entry.** Where Article 86 applies, add an entry to the regulatory classification record: "Article 86 — applicable. Explanation architecture specified in [reference to Stage 2 behavioral specification section]. Explanation retention period: [X years per applicable regulatory floor]. Data subject request channel: [mechanism]."
 
 ---
 

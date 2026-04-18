@@ -45,11 +45,23 @@ A successor agent product has been developed, evaluated, and is ready for full m
 
 Even for a planned retirement with a ready successor, the retirement process is mandatory. The existence of a successor does not eliminate the agent's user relationships, regulatory obligations, or decision records. Those must be governed through the retirement process regardless of how good the successor is.
 
+### Trigger 5 — Economic Non-Viability
+
+The agent product's cost per successful outcome has exceeded the value per successful outcome for two consecutive quarterly FinOps reviews, with no credible recovery trajectory within the product's planning horizon. Operating a product that consistently costs more to run than the value it delivers is not a risk management decision — it is an accounting loss that governance requires to be acknowledged rather than deferred.
+
+**Assessment evidence required.** The retirement decision triggered by Trigger 5 must be documented with: (a) actual cost per successful outcome for the past two quarters (from Stage 5 FinOps monitoring records, Category C AGKB); (b) the Stage 1 business case ROI projection for comparison; (c) the variance and a written assessment of whether the gap is structural (the product's economics are inherently unfavorable at current scale and technology cost) or recoverable (the gap is temporary and has a specific, credible recovery mechanism with a defined timeline); (d) forward-looking analysis: at what interaction volume, cost reduction, or value increase would the product reach economic viability, and is that scenario achievable within the current planning horizon?
+
+**"No credible recovery trajectory" defined.** A recovery trajectory is not credible if: it requires an interaction volume more than 3× current volume without evidence of that demand; it requires a foundation model cost reduction that depends on external provider decisions; it requires capability improvements that have not been validated in Stage 3 evaluation; or the "recovery" is redefined as accepting a lower business case ROI than the Stage 1 commitment. A recovery trajectory that depends on hope rather than evidence is not credible.
+
+**Economic non-viability does not override safety.** Trigger 5 cannot be used to defer a retirement that is required by Trigger 2 (behavioral specification unachievable) or Trigger 3 (regulatory non-compliance). A product that is both economically non-viable and behaviorally non-compliant must be retired on the basis of Trigger 2 or 3 — the economic trigger is additive, not substitutive.
+
+**Quarterly assessment cadence.** The economic non-viability assessment is performed at each quarterly FinOps review. The review produces a structured finding: viable / borderline (one quarter of degradation, monitoring intensified) / non-viable trigger met (second consecutive quarter, retirement decision required within 30 days). A "non-viable trigger met" finding that is not acted on within 30 days is an accountability failure by the Business Owner and accountable human — it must be escalated to the organizational governance level that commissioned the Stage 1 business case.
+
 ### Retirement Decision Documentation
 
 The retirement decision is a formal document. It records:
 - The trigger or combination of triggers that justified the decision.
-- The evidence supporting each trigger (specification non-compliance evidence, recalibration records, regulatory analysis, successor readiness confirmation).
+- The evidence supporting each trigger (specification non-compliance evidence, recalibration records, regulatory analysis, successor readiness confirmation). For Trigger 5: two consecutive quarterly FinOps review records showing cost-per-successful-outcome exceeding value-per-successful-outcome, with the recovery trajectory assessment.
 - The identity of the product owner and accountable human who made the decision.
 - For regulated agent products: legal and risk review confirmation. A regulated agent product cannot be retired without a review of the retirement's regulatory implications — ceasing operation of a high-risk AI system triggers post-market obligations, data retention requirements, and notification requirements that must be planned before the retirement begins, not discovered during it.
 - The date of the decision and the planned retirement timeline.

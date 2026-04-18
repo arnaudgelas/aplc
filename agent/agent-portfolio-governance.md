@@ -143,6 +143,20 @@ Specific containment requirements for interaction boundaries:
 
 ---
 
+## Swarm Governance at Portfolio Level
+
+When the organization deploys multiple agent products that interact autonomously, portfolio-level swarm governance is required in addition to each individual product's APLC governance.
+
+**Swarm registry.** The portfolio registry must capture, for each pair of agent products that interact: the interaction type (orchestrator→subordinate, peer-to-peer, data producer→data consumer), the authority relationship (which agent principal tier does the sending agent occupy in the receiving agent's trust architecture), and the data flow (what categories of information pass between the agents and whether any personal data is included in inter-agent messages).
+
+**Swarm-level blast radius monitoring.** The portfolio-level monitoring must include aggregate blast radius tracking: for any coordinated task execution involving multiple agents, the total consequence of all agents' actions is computed and compared against the swarm-level blast radius ceiling defined in the swarm behavioral specification addendum. Blast radius exceedance at the swarm level triggers an immediate halt of the coordinated task and a Swarm Boundary Incident, even if each individual agent's actions were within its individual specification.
+
+**Foundation model epidemic surveillance at swarm level.** If multiple agents in a portfolio share a foundation model provider or model version, a single provider-initiated model update can simultaneously affect all of them. Portfolio-level surveillance must detect these "model epidemic" scenarios: when a foundation model update notification is received, immediately identify all agent products whose CSH includes the affected model, and coordinate their regression testing. Sequential product-by-product testing is not sufficient for shared-model scenarios — coordinated testing enables detection of inter-agent behavioral interactions that may emerge from a model update affecting all participants simultaneously.
+
+**Inter-agent incident escalation.** When an incident in one agent product is traced to behavior received from another agent product (e.g., adversarial content injected via an inter-agent message), the incident management protocol for both products activates simultaneously. The portfolio steward coordinates the joint incident response. Inter-agent incidents that cannot be attributed to either product independently are managed at the portfolio level with the portfolio steward as the accountable human.
+
+---
+
 ## Portfolio Risk Aggregation
 
 Portfolio-level risk is not the sum of individual system risks. Correlated risks — where multiple systems share a common dependency — require aggregate assessment because a failure in that dependency affects multiple systems simultaneously.
@@ -184,6 +198,45 @@ The portfolio risk dashboard is reviewed by organisational governance on the cad
 | Operator capacity review | Quarterly | Organisational governance | Capacity findings; role reassignment decisions if warranted |
 
 Governance cadence reviews are not optional ceremonies. They are the mechanism by which portfolio-level signals reach the accountability roles that can act on them. A portfolio where the governance cadence has lapsed — where Registry entries are stale, epidemic surveillance summaries have not been produced, or the risk dashboard has not been reviewed — is a portfolio whose aggregate risk is unknown. Unknown aggregate risk is not managed risk.
+
+---
+
+## Governance Capacity Management
+
+The portfolio's governance quality is bounded by the governance team's capacity. A governance team that is overloaded cannot execute gate assessments with genuine rigor, cannot maintain HITL queues within SLO, and cannot investigate behavioral incidents thoroughly. Governance overload is not a resource management problem to be solved by working harder — it is a governance risk that must be managed through portfolio scope, prioritization, and resourcing decisions.
+
+### Governance Capacity Metric
+
+Compute monthly: the ratio of required governance FTE (sum of all governance functions for all deployed products in the portfolio) to available governance FTE.
+
+```
+Governance Capacity Ratio = Required FTE / Available FTE
+```
+
+Required FTE estimation: use the minimum FTE estimates from `aplc-guide.md` Governance Team Capacity Requirements, adjusted for each product's actual complexity (interaction volume, incident history, recalibration frequency).
+
+### Capacity State Thresholds and Responses
+
+**Normal (ratio ≤ 0.80).** Governance team is operating within capacity. Standard governance processes apply without modification.
+
+**Elevated (0.80 < ratio ≤ 1.00).** Governance team is near capacity. Required actions: (a) Portfolio Steward is notified with the current ratio and a breakdown by product and function; (b) new product conceptions require explicit Portfolio Steward approval with an assessment of which existing governance activities will be de-prioritized to accommodate the new product; (c) HITL sample rates for lowest-risk products may be temporarily reduced to the minimum viable level.
+
+**Overload (ratio > 1.00).** Governance team is over capacity. Immediate required actions within 5 business days: (a) halt new product conceptions until the ratio returns to Normal; (b) reduce evaluation cadence for lowest-risk products to Stage 6 minimum; (c) escalate to the organizational leadership level that commissioned the APLC adoption — a formal resourcing request with timeline; (d) document which governance activities are being deferred and the corresponding risk acceptance.
+
+An organization in Overload state for more than 60 consecutive days without a documented resourcing response or scope reduction is in governance capacity failure. This finding must be disclosed to the Regulatory Owner and included in the next regulatory examination or audit response.
+
+### Portfolio Prioritization Under Capacity Constraint
+
+When governance capacity is insufficient for full governance across all deployed products, the Portfolio Steward must prioritize explicitly — not implicitly through delay. Prioritization criteria (highest priority first):
+
+1. Products in active behavioral incidents (quality, behavioral, safety, persona, adversarial)
+2. Products at a pending gate decision (Operational Readiness Gate or Behavioral Release Gate)
+3. Products with open Critical or High red-team findings
+4. Products with active waivers approaching expiry
+5. Products with the highest user populations or highest consequence decision-making
+6. All other products: governance activities are deferred to the next available capacity window
+
+Deferred governance activities are logged in the AGKB as pending actions with their deferral date and the capacity constraint rationale. Deferral does not cancel the activity — it schedules it. Activities deferred beyond their maximum acceptable deferral window (defined per activity type in the behavioral specification) require accountable human risk acceptance.
 
 ---
 

@@ -50,6 +50,12 @@ Agent system costs map to the five components of the Composite Agent State and t
 
 **Governance agent operating cost.** Cost incurred by governance agents that assist APLC stage gate work — behavioral consistency checking, coverage gap analysis, evaluation summary drafting, and cost monitoring. Governed by the governance agent participation framework in [[aplc.md]]. Governance agent cost is typically a small fraction of total operating cost but must be attributed to the product it governs and must not be invisible in the cost model.
 
+**External tool and API cost.** Cost incurred per tool invocation on external services: database queries, financial data feeds, document processing APIs, search APIs, third-party AI inference services, and any other external service called through the agent's tool manifest. For tool-heavy agents — document processing pipelines, financial data agents, research agents calling multiple data sources — this component can dominate the total operating cost while remaining invisible to the standard inference cost monitoring.
+
+Attribution: use the tool manifest version record in the CSH to map each tool invocation to its declared cost profile. Each tool in the tool manifest carries a cost profile defined at Stage 2: `{estimated_cost_per_call, cost_floor, cost_ceiling, billing_unit}`. Cost attributed to each tool is logged per invocation using the same attribution tagging dimensions as other cost components (product identifier, APLC stage, cost component type, autonomy tier, CSH, business purpose).
+
+Tool cost anomaly detection: a tool invocation whose actual cost exceeds its Stage 2 cost profile ceiling by more than 20% generates a cost anomaly alert to the Technical Owner. A pattern of tool cost ceiling exceedances concentrated on a specific tool version may indicate: (a) the tool provider has changed its pricing or rate limits without notification; (b) the agent is calling the tool with unusually large or complex inputs (a behavioral signal); (c) the Stage 2 cost profile was incorrect and needs revision. All three root causes require investigation; only root cause (c) is resolved by updating the cost profile — root causes (a) and (b) require governance responses beyond cost model revision.
+
 ### Cost Attribution Tagging
 
 Every cost-incurring component must carry attribution tags before it runs. Required dimensions for agent products:
@@ -62,6 +68,7 @@ Every cost-incurring component must carry attribution tags before it runs. Requi
 | Autonomy tier | The tier at which the interaction was processed |
 | Composite State Hash | The CSH active at the time of cost incurrence |
 | Business purpose | The business outcome the cost is serving |
+| Tool invocation identifier (for interactions involving tool calls) | The tool name and version from the tool manifest, enabling per-tool cost attribution at interaction resolution |
 
 The CSH dimension is specific to agent products and has no equivalent in software delivery cost attribution. It enables cost anomaly investigation to be correlated with composite state changes: when a cost spike is detected, the attribution data identifies which CSH was active during the spike, enabling the Technical Owner to determine whether a model update, knowledge base change, or prompt revision is the driver.
 

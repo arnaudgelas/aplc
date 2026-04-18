@@ -17,13 +17,13 @@ Stage 4 is where a built and evaluated agent transitions to a deployed product. 
 
 The ASDLC `release-governance.md` establishes the foundational release gate: evidence bundle complete, independent validation passed, rollback procedure tested, accountable human sign-off, and compliance documentation complete. Every one of those conditions applies to an agent product release without modification. Stage 4 of the APLC does not relax, replace, or circumvent them.
 
-What Stage 4 adds is the behavioral dimension: the agent-specific conditions that the ASDLC release gate does not address because they are not relevant to deterministic software. Deterministic software does not have a behavioral baseline that drifts. It does not have a foundation model that can be updated by a third party between releases. It does not require a four-layer probabilistic evaluation portfolio before release. The APLC Stage 4 gate adds the ten conditions below on top of the ASDLC release gate conditions. Both sets must be satisfied. Neither substitutes for the other.
+What Stage 4 adds is the behavioral dimension: the agent-specific conditions that the ASDLC release gate does not address because they are not relevant to deterministic software. Deterministic software does not have a behavioral baseline that drifts. It does not have a foundation model that can be updated by a third party between releases. It does not require a four-layer probabilistic evaluation portfolio before release. The APLC Stage 4 gate adds the eleven conditions below on top of the ASDLC release gate conditions. Both sets must be satisfied. Neither substitutes for the other.
 
 ---
 
 ## Behavioral Release Gate (Detailed)
 
-The S3→S4 gate is the checkpoint that authorises the transition from the Build & Evaluate stage to the Release stage. It requires ten conditions. For each, the required evidence, the minimum standard, and the consequence of non-satisfaction are defined below.
+The S3→S4 gate is the checkpoint that authorises the transition from the Build & Evaluate stage to the Release stage. It requires eleven conditions. For each, the required evidence, the minimum standard, and the consequence of non-satisfaction are defined below.
 
 ---
 
@@ -102,9 +102,20 @@ The manifest must be reviewed by the release manager, signed by the named accoun
 The risk classification and conformity assessment path were determined at Stage 1 per `agent-regulatory-classification.md`. If that classification identified the system as high-risk, the gate condition is not optional. The EU DoC is a legal document — not a compliance summary — signed by the operator attesting that the system conforms to the applicable requirements of the EU AI Act.
 
 **Required evidence:**
-- Annex IV technical documentation complete and reviewed. The APLC documents produced across Stages 1–4 constitute the majority of Annex IV documentation — see the mapping table in `agent-regulatory-classification.md`. Any gaps identified in that mapping must be closed before the gate review.
+- Annex IV technical documentation complete and reviewed. The APLC documents produced across Stages 1–4 constitute the majority of Annex IV documentation — see the mapping table in `agent-annex-iv-mapping.md`. Any gaps identified in that mapping must be closed before the gate review.
 - For systems requiring a notified body assessment (biometric identification systems and critical infrastructure AI safety components): the notified body conformity assessment certificate must be in hand before the Stage 4 gate review is scheduled. Notified body review has lead times that cannot be compressed at the last moment; the engagement must have been initiated at Stage 1.
 - The EU DoC: signed by the named responsible person, referencing the conformity assessment procedure followed, the relevant standards applied, and — where applicable — the notified body certificate. The DoC is filed with the EU AI Office database before market placement.
+
+**Post-Market Surveillance Plan (required for EU AI Act Annex III high-risk systems).** Before the Operational Readiness Gate can close, a Post-Market Surveillance Plan compliant with EU AI Act Article 61 must be filed as a gate artifact. The plan must contain:
+
+1. *Surveillance objectives and scope* — which aspects of the agent's performance are under surveillance, the user population covered, and the regulatory risks being monitored.
+2. *Data collection methodology* — which Stage 5 metrics constitute the surveillance data collection; collection frequency; statistical analysis methodology (minimum sample sizes, significance testing approach, trend analysis method).
+3. *Evaluation criteria* — at what performance level does the surveillance system trigger a corrective action? Thresholds must be pre-committed in this plan; thresholds set after observing production data are not valid surveillance criteria.
+4. *Reporting mechanism* — the format, content, recipients, and cadence of surveillance reports. For high-risk systems, reports must be provided to the EU AI Office on the schedule required under the Act.
+5. *Actions and timelines* — what specific actions are triggered by which surveillance findings, within what regulatory timeframes.
+6. *Notified body and market surveillance authority notification protocol* — when and how to notify the relevant authorities of serious incidents, significant changes, or performance degradations that affect conformity.
+
+The Post-Market Surveillance Plan is a living document: it is updated when behavioral specifications change, when new performance thresholds are established after recalibration, or when regulatory guidance on Article 61 implementation is issued. Version history of the plan is maintained in the AGKB alongside behavioral specification version records.
 
 **Minimum standard:** For high-risk systems: EU DoC signed and filed before any deployment to any EU market. For non-high-risk systems: documentation of the risk classification rationale, reviewed and current. Scope creep that moves a minimal-risk system into a high-risk category during development must have triggered a reclassification at Stage 2 or Stage 3. If the Stage 4 review reveals that the system's scope has expanded beyond the Stage 1 classification, the Stage 4 gate is paused until the conformity documentation reflects the current scope.
 
@@ -179,7 +190,13 @@ The EU AI Act Article 50 imposes a mandatory disclosure requirement: users must 
 
 ---
 
-### Gate Condition 10 — Epistemic Tier Labeling
+### Gate Condition 10 — Cost Envelope Review
+
+**Cost Envelope gate condition:** The operational cost envelope filed at Stage 2 has been reviewed and signed by the Business Owner. The review confirms that the cost envelope was established based on Stage 3 evaluation data (actual cost-per-interaction measurements from the evaluation runs), not on pre-evaluation estimates. The signed cost envelope document is filed in the AGKB as a gate artifact. A deployment proceeding without a signed cost envelope has no economic governance and cannot be considered fully governed regardless of behavioral gate status.
+
+---
+
+### Gate Condition 11 — Epistemic Tier Labeling
 
 **What it requires:** Every artefact submitted to the Behavioral Release Gate must carry an epistemic tier label identifying how the artefact was produced. The label is a machine-readable field in the artefact metadata or, for documents without structured metadata, a declared statement in the artefact header.
 
@@ -369,4 +386,4 @@ For systems that are not high-risk under Annex III, the Stage 4 conformity gate 
 
 *Stage 4 is not the end of governance — it is the beginning of governed production. The behavioral baseline established at Stage 4 is the foundation for all Stage 5 monitoring. The composite state manifest filed at Stage 4 is the reference for every incident investigation in Stage 5 and Stage 6. The named accountable human who accepts accountability at Stage 4 carries that accountability through the product's operational life. Release is not a handoff; it is a commitment.*
 
-*Cross-references: ASDLC `release-governance.md` for the foundational release gate conditions this document extends; [agent-behavioral-evaluation.md](agent-behavioral-evaluation.md) for the evaluation portfolio that Gate Condition 2 requires; [agent-composite-versioning.md](agent-composite-versioning.md) for the composite state manifest format and filing procedure that Gate Condition 4 requires; [agent-regulatory-classification.md](agent-regulatory-classification.md) for the EU AI Act classification and conformity assessment path that Gate Condition 5 requires; [agent-operations.md](agent-operations.md) for Stage 5 monitoring that depends on the behavioral baseline established at Gate Condition 3; [agent-maintenance.md](agent-maintenance.md) for memory governance referenced in the rollback procedure.*
+*Cross-references: ASDLC `release-governance.md` for the foundational release gate conditions this document extends; [agent-behavioral-evaluation.md](agent-behavioral-evaluation.md) for the evaluation portfolio that Gate Condition 2 requires; [agent-composite-versioning.md](agent-composite-versioning.md) for the composite state manifest format and filing procedure that Gate Condition 4 requires; [agent-regulatory-classification.md](agent-regulatory-classification.md) for the EU AI Act classification and conformity assessment path that Gate Condition 5 requires; [agent-annex-iv-mapping.md](agent-annex-iv-mapping.md) for the formal mapping of APLC documents to EU AI Act Annex IV documentation requirements referenced in Gate Condition 5; [agent-operations.md](agent-operations.md) for Stage 5 monitoring that depends on the behavioral baseline established at Gate Condition 3; [agent-maintenance.md](agent-maintenance.md) for memory governance referenced in the rollback procedure.*

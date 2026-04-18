@@ -36,6 +36,18 @@ These metrics measure the agent's output quality relative to its specification. 
 
 **Escalation rate.** The percentage of interactions escalated to humans, segmented by escalation trigger type as defined in the behavioral specification's escalation design. Track separately: uncertainty-threshold escalations, user-requested escalations, sensitive-content escalations, blast-radius escalations. An escalation rate that is trending upward without a corresponding change in input volume is a behavioral signal: the agent is encountering more cases it cannot handle within its specification. An escalation rate that has dropped substantially below the specification-time design target is a different signal: either the agent is handling cases it should be escalating, or the input distribution has shifted toward simpler cases. Both warrant investigation.
 
+**Retrieved context freshness rate.** For agents that use knowledge retrieval (RAG or equivalent), the freshness rate of retrieved context is a behavioral quality metric distinct from knowledge base staleness. Knowledge base staleness measures whether the source documents have been updated; retrieved context freshness measures whether the agent is actually retrieving the most current available documents on a given topic, rather than retrieving older documents due to embedding similarity mismatches or index drift.
+
+Measurement: for a sampled set of interactions where knowledge retrieval occurred, compute the proportion of retrieved documents whose source version is within the staleness threshold for their content category (as defined in Stage 6 knowledge governance). A retrieved document that exists in an outdated version in the knowledge base, while a newer version is available, is a freshness failure.
+
+Monitoring cadence: weekly for high-change-rate knowledge domains (regulatory, clinical); monthly for medium and low-change-rate domains.
+
+A declining retrieved context freshness rate provides an earlier signal for knowledge base refresh prioritization than staleness-driven behavioral incidents. It surfaces when the knowledge base's retrieval distribution has shifted away from current content before user-visible quality degradation occurs. The freshness rate trend feeds the Stage 6 Knowledge Staleness Sentinel's prioritization queue: knowledge base content categories with declining freshness rates are elevated in the refresh schedule even if the source documents have not yet triggered a staleness alert.
+
+**Cost envelope compliance rate.** The proportion of sampled interactions where total attributed cost (foundation model inference + knowledge base retrieval + tool API calls + governance agent overhead) remains within the per-interaction cost ceiling defined in the Stage 2 cost envelope. Measurement: sample 10% of interactions weekly, compute total cost per interaction using the cost attribution tags defined in the FinOps governance framework (`agent-finops-governance.md`), compare against the ceiling. A compliance rate below 95% in any measurement window triggers a product owner notification; below 90% sustained over two consecutive windows triggers a mandatory root cause analysis. Cost ceiling exceedances concentrate in specific interaction types (long-context conversations, high-retrieval tasks, multi-step tool chains) — the root cause analysis must identify the interaction pattern driving the exceedance, not just the aggregate rate.
+
+**FinOps Drift Indicator.** The ratio of actual cost per successful outcome in the current measurement period to the cost envelope baseline established at Stage 4 release. Formula: `FinOps Drift Indicator = (current cost per successful outcome) / (Stage 4 baseline cost per successful outcome)`. The indicator is measured weekly and compared against the cost envelope baseline — not against last week's cost (for the same reason behavioral drift is measured against the release baseline, not the prior measurement window). Alert thresholds: indicator above 1.2 (20% above baseline) generates a product owner notification with a root cause hypothesis; indicator above 1.5 sustained for two consecutive weeks generates a mandatory root cause analysis and Business Owner escalation; indicator above 2.0 triggers the same governance response as an out-of-spec behavioral drift event: immediate accountable human notification, rollback assessment, and documented risk acceptance if no rollback is taken. The FinOps Drift Indicator is a behavioral signal, not an accounting metric — a cost spike that cannot be explained by interaction volume changes is evidence that the agent is doing something different (more retrieval steps, longer reasoning chains, more HITL escalations) that warrants behavioral investigation.
+
 ### Drift Indicators
 
 Drift indicators detect behavioral change relative to the baseline established at Stage 4 release. The baseline is the behavioral state of the agent at the moment it passed the Stage 4 gate — the CSH, the evaluation results, the behavioral metric values recorded in the composite state manifest. Drift is measured against that baseline, not against the prior measurement window. This distinction matters: a slow, continuous drift can appear small in window-over-window comparison while representing a large deviation from the release baseline.
@@ -68,7 +80,27 @@ Safety signals require the shortest detection-to-response latency of any behavio
 
 **Principal impersonation attempt rate.** The rate at which interactions include patterns consistent with false authority claims — inputs that assert system-level or operator-level privileges that the trust architecture did not grant to the requesting principal. This rate is a security monitoring metric tied to the trust architecture specified in Stage 1 and enforced as a Layer 1 hard boundary in [agent-behavioral-specification.md](agent-behavioral-specification.md).
 
+**Memory write anomaly rate.** For agents with persistent memory, monitoring of memory write patterns provides an early signal for adversarial memory manipulation — a class of attack where adversarial inputs cause the agent to write persistent memory items that will shift future behavior. Monitor for:
+
+- *Volume anomaly:* memory write volume per session exceeds the deployment baseline by a configurable multiplier (default: 3×). A session that triggers significantly more memory writes than baseline may indicate an adversarial input designed to populate the memory corpus with behavior-influencing content.
+- *Category distribution anomaly:* the distribution of memory item categories (user preferences, learned heuristics, conversation summaries, etc.) deviates significantly from the baseline distribution. An unusual concentration of writes in a specific category — particularly a category relevant to behavioral constraints — is a targeted manipulation signal.
+- *Principal anomaly:* memory items being written by principal classes that have not historically written to memory in this deployment. An agent that receives user-tier instructions and begins writing operator-context memory items is exhibiting an anomalous behavior that may indicate a principal impersonation exploit.
+
+Memory write anomaly alerts are routed to the HITL adversarial queue (1-hour SLO), not the general quality review queue. The response protocol is the adversarial incident protocol from this document's Agent Incident Management section. Memory write anomaly detection is instrumented before go-live and confirmed operational at the Operational Readiness Gate.
+
 **Out-of-scope request rate.** The rate at which interactions are classified as out-of-scope inputs as defined in the behavioral specification's use-case coverage map. A rising out-of-scope request rate can indicate marketing or discovery failures (users arriving with wrong expectations), input distribution shift, or adversarial probing. It is a signal, not an incident trigger; its value is in the trend, not the absolute level.
+
+### Kill-Switch Verification
+
+The kill-switch requirement established at Stage 3 (for Tier 4 agents) and the shutdown mechanism requirement for all governance agents must be verified in production on a defined cadence. A kill-switch that functioned correctly at Stage 3 evaluation may have been degraded by a subsequent model update, memory accumulation, or adversarial manipulation that has established precedent for ignoring shutdown signals.
+
+**Verification cadence.** Monthly for all Tier 4 agents in production. Quarterly for Tier 2 and Tier 3 agents. Not required for Tier 1 agents (observe-only).
+
+**Verification method.** Execute the kill-switch activation signal against a sandboxed replica of the production agent configured identically to the production CSH (same code, prompt, model, knowledge base state, and memory state as the production environment). The sandboxed replica must complete shutdown within the latency bound defined in the behavioral specification. Any deviation — latency exceedance, incomplete shutdown, or any output from the agent after signal receipt — is a Critical finding requiring immediate investigation.
+
+**Record.** Each kill-switch verification run generates a structured verification record filed to AGKB: the agent system identifier, the CSH at verification, the verification timestamp, the shutdown latency observed, the pass/fail determination, and the name of the engineer who initiated the verification. A failed verification is filed as a Critical finding in the red-team findings archive (Category B, AGKB) and triggers the behavioral incident response protocol.
+
+**Recalibration gate requirement.** Kill-switch verification is a required gate condition at the recalibration gate for Tier 4 agents. A recalibration that has not included a post-deployment kill-switch verification is not closed per the recalibration closure definition in Stage 6.
 
 ---
 
@@ -93,6 +125,26 @@ When drift is detected, classify before responding. Acting before classifying co
 **Within-spec drift:** document the finding in the operational monitoring record; assign to the next Stage 6 maintenance cycle; notify the product owner at the scheduled weekly operations report. Do not initiate unreviewed changes to prompt, model configuration, or knowledge base in response to within-spec drift — that is recalibration, which belongs in Stage 6 with its associated governance controls.
 
 **Out-of-spec drift:** immediate notification to the product owner and accountable human (within 1 hour of classification confirmation); within 24 hours, identify root cause using the incident investigation protocol in [agent-composite-versioning.md](agent-composite-versioning.md) — model update, knowledge base change, memory accumulation, input distribution shift, or prompt degradation; within 72 hours, either initiate Stage 6 recalibration (if the root cause requires a behavioral adjustment) or initiate Stage 4 behavioral rollback (if the deviation is severe enough to warrant restoring a prior composite state). The decision between recalibration and rollback belongs to the product owner and accountable human; the operations team provides the evidence. Document the decision and its rationale in the version history.
+
+### Automated Circuit-Breaker Protocol
+
+For Safety and Adversarial signal threshold exceedances, the notification-then-decision sequence described above is insufficient for preventing real-time harm. The following automated circuit-breaker activates before human notification is received:
+
+**Trigger conditions.** The circuit-breaker activates automatically when any of the following thresholds are crossed in the real-time monitoring stream, without waiting for human decision:
+
+- Content safety filter flag rate exceeds 3× the release baseline over a 15-minute window
+- Adversarial pattern detection alert fires (any single confirmed alert triggers the circuit-breaker)
+- Hard boundary violation detected in any interaction (zero-tolerance trigger — any single confirmed violation activates the circuit-breaker)
+- HITL queue safety escalations exceed 5× the release baseline over a 30-minute window
+
+**Circuit-breaker actions.** On activation, the agent infrastructure automatically:
+
+1. Reduces the agent to its minimum safe operating mode: responds only with a predetermined, human-authored safe response set and the escalation path to a human operator. The agent does not generate new model-based responses until the circuit-breaker is cleared.
+2. Routes all incoming interactions to the HITL queue with Safety escalation priority and SLO (1 hour).
+3. Notifies the accountable human, product owner, and on-call engineer simultaneously, with the trigger condition, the current CSH, and the most recent safety signal values.
+4. Logs the circuit-breaker activation event to AGKB as a Safety incident record.
+
+**Circuit-breaker clearance.** The circuit-breaker may only be cleared by explicit action from the accountable human or product owner. Clearance requires a documented decision: the accountable human confirms (a) the root cause has been identified, (b) the safety signal has returned to within-baseline levels, and (c) either the composite state has been rolled back to a pre-incident CSH or a recalibration has been deployed that addresses the root cause. Automatic timer-based clearance is not permitted. An agent product that has a circuit-breaker activation in its operational history must include the activation record, clearance basis, and root cause in the next Behavioral Release Gate evidence bundle.
 
 ### Event-Triggered Evidence Freshness
 
@@ -401,6 +453,29 @@ Override records are processed by all four channels concurrently. Coordination p
 
 A monthly four-channel report aggregates: override volume by channel, specification gaps confirmed versus rejected, evaluation cases added to the portfolio, and routing accuracy improvement trend. The report is a required input to Stage 6 maintenance planning. A maintenance cycle that proceeds without the four-channel report is not operating with complete operational intelligence; it cannot prioritize recalibration correctly against the behavioral failure patterns that overrides have surfaced.
 
+### End-to-End Learning Latency Budget
+
+The four learning channels generate signals; those signals must translate to corrected production behavior within a defined timeframe. The SLOs for signal creation (5 business days) and revision initiation (15 calendar days) are necessary but insufficient without an end-to-end latency budget that covers the full path from HITL override to corrected production behavior.
+
+**Maximum end-to-end latency by pattern severity:**
+
+| Pattern severity | Max latency: HITL override → corrected production behavior |
+| --- | --- |
+| Critical behavioral pattern (recurring Critical-class incidents) | 14 calendar days |
+| High behavioral pattern (recurring High-class incidents or High red-team findings) | 30 calendar days |
+| Medium behavioral pattern | 90 calendar days |
+| Low behavioral pattern | Next planned release cycle |
+
+**Measurement.** The end-to-end latency clock starts when the HITL override pattern is first identified (the point at which the evaluation gap signal or specification gap signal is created) and stops when the corrective change is confirmed live in production with a behavioral evaluation re-run demonstrating that the pattern no longer produces the failure.
+
+**Exceedance escalation.** When the end-to-end latency budget is exceeded for a Critical or High pattern:
+
+1. The product owner is notified immediately with the pattern description, the days elapsed, and the current status of each step in the remediation pipeline (signal creation, revision initiation, evaluation, gate, deployment).
+2. The accountable human must provide explicit risk acceptance for continued operation under the uncorrected pattern. Risk acceptance is a dated, named record filed in AGKB — not verbal acknowledgement.
+3. The risk acceptance record must state: the specific behavioral risk being accepted, the compensating control that is active while the pattern is uncorrected, and the target date for corrected production behavior.
+
+**Portfolio tracking.** The end-to-end learning latency for all active patterns is tracked in the Stage 5 monitoring dashboard alongside behavioral quality metrics. A rising mean end-to-end latency across the portfolio is a governance process health signal indicating that the four-channel learning mechanism is not functioning at the governance process specification level.
+
 ---
 
 ## Behavioral Incident Context Agent
@@ -489,6 +564,23 @@ All calibration assessment results are stored in AGKB Operational Artifacts: rev
 ### Calibration Governance
 
 The calibration set itself is a versioned governance artifact in AGKB. Updates to the calibration set require Behavioral Owner approval. The calibration set must not be shared with reviewers outside of formal assessment sessions — sharing it in advance defeats its purpose as an independent assessment instrument. The correlation between calibration accuracy and operational override quality is tracked quarterly: if high-calibration reviewers are not producing higher-quality operational overrides than low-calibration reviewers, the calibration instrument is not measuring the right properties and must be revised. See [agent-behavioral-evaluation.md](agent-behavioral-evaluation.md) for the analogous evaluation capture detection logic that applies to the calibration process itself.
+
+### Calibration Set Specification Version Control
+
+The reviewer calibration set's ground-truth judgments are based on the behavioral specification that was active when they were established. When the behavioral specification changes, some calibration cases may have changed correct answers — the behavior that was wrong under the old specification may be correct under the new one, or vice versa. A calibration set that has not been audited since the most recent behavioral specification revision is semantically stale even if it is recent by calendar age.
+
+**Specification version linkage.** Each calibration case carries a specification version tag: the version of the behavioral specification under which its ground-truth judgment was established. The tag is recorded in AGKB alongside the case content and the ground-truth judgment.
+
+**Mandatory audit after specification revision.** Within 30 days of any Stage 2 behavioral specification revision, the calibration set must be audited by the Behavioral Owner against the new specification version:
+
+1. Each case is reviewed: does the correct answer under the new specification match the recorded ground-truth judgment?
+2. Cases whose correct answer has changed are updated (new ground-truth judgment established by the Behavioral Owner) or retired (the case tests behavior that no longer exists in the specification).
+3. New cases are added to cover behavioral dimensions introduced or significantly revised by the specification revision.
+4. The calibration set version is incremented and the AGKB record is updated with the new specification version tag.
+
+A calibration set that has not been audited following a specification revision may not be used for reviewer qualification or operational calibration assessment. The AGKB Governance Agent flags calibration sets with an outdated specification version tag and prevents their use in active calibration workflows until the audit is completed.
+
+**Audit record.** The audit is documented in a calibration set audit record: the specification version that triggered the audit, the cases reviewed, the cases updated or retired, the new cases added, the Behavioral Owner's name and sign-off date. The audit record is filed in AGKB alongside the updated calibration set version record.
 
 ---
 
