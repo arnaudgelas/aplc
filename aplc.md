@@ -113,6 +113,39 @@ Stage 4 is the governance transition from built-and-evaluated agent to deployed 
 
 **Operational Readiness Gate conditions:** all seven behavioral release gate conditions satisfied; canary deployment completed with no rollback triggers activated; product owner explicit approval to proceed to full rollout; behavioral monitoring infrastructure live in production environment.
 
+### Initiative Authorization Gate (parallel to Stage 4 Release Gate)
+
+The Stage 4 Release Gate authorises an agent product to *execute assigned tasks* in production within its behavioral envelope. It does not, by itself, authorise the agent to exercise *initiative* — to surface action opportunities not assigned by a human, drawing on the substrate to perceive institutionally relevant patterns and recommend organizational actions (AEnt-M Principle 6). Initiative is a distinct governance posture and requires a distinct gate.
+
+The Initiative Authorization Gate operates in parallel to the Stage 4 Release Gate. An agent product may pass the Release Gate and operate at full Stage 4 governance for assigned tasks while remaining unauthorised to exercise initiative for any action class. Initiative authority is **not granted globally**; it is granted **per-domain × per-action-class**. A single agent may hold initiative authority for one action class within a domain (e.g., surfacing settlement-reconciliation opportunities) and not for another within the same domain (e.g., surfacing cross-border regulatory-filing opportunities).
+
+**Three pass conditions, all required:**
+
+1. **Substrate-depth condition** — the IGM-governed domain graph for the action class is measurably deep: claim coverage of the relevant institutional knowledge >80%, connectivity rising over the prior measurement window, freshness >90% (claims within their decay class's revalidation cadence), contradictions typed and tracked per IGM Principle 4. The substrate-depth measurement is confirmed by the IGM revision authority for the domain.
+
+2. **Constraint-legibility condition** — >80% of action classes in scope have machine-readable constraint definitions (not document-buried policy prose). The agent's self-classification accuracy on the constraint architecture has been validated >90% against a held-out reference set: when the agent classifies a candidate action against the constraint architecture, it agrees with the human-validated classification at least 9 times in 10.
+
+3. **Governance-relocation condition** — at least one action class within the proposed initiative scope has demonstrated control equivalence per AEnt-M Principle 7 (decision quality stable or improved under substrate-resident governance vs synchronous pre-action checking). Degradation monitoring is active and tested: a deliberate degradation injection has been performed and the monitoring detected and responded to it within the SLO defined for the consequence class.
+
+All three conditions met → initiative is authorised for that agent in that domain for those action classes. Any one condition unmet → initiative is not authorised; the agent operates as a Stage-4-released assigned-task executor only.
+
+**Time-bounded.** Initiative authorisation is reviewed quarterly. The review re-evaluates all three conditions against current evidence; the prior authorisation does not roll forward by default.
+
+**Auto-revoke trigger.** Any condition degrading below threshold — coverage falls below 80%, connectivity declines over a sustained window, freshness falls below 90%, contradictions accumulate untyped, machine-readable constraint coverage falls below 80%, agent self-classification accuracy falls below 90%, control-equivalence evidence falls behind the synchronous baseline, or degradation monitoring fails its periodic injection test — automatically revokes initiative authority for the affected action class. The agent reverts to assigned-task execution for that class until the condition is restored and a re-authorisation review is conducted.
+
+**Accountable human.** The system steward signs the gate. The IGM revision authority for the domain co-signs. Both signatures are required; neither alone is sufficient. The system steward is accountable for the agent's operational governance; the IGM revision authority is accountable for the substrate state on which the initiative claim depends.
+
+**Evidence required at the gate:**
+
+- Domain-graph metrics dashboard showing coverage, connectivity, freshness, and contradiction-tracking status for each domain × action class in scope, with measurement timestamps.
+- Steward attestation that the constraint architecture is machine-readable for the listed action classes, that agent self-classification accuracy has been validated against a held-out reference set within the prior 30 days, and that degradation monitoring is operational.
+- IGM revision authority sign-off confirming substrate-depth measurements, naming the authorities for each claim family in scope, and attesting to the contradiction-tracking status.
+- The class register (per `governance/governance-integration-note.md`) showing which action classes are in scope for initiative and at which AEnt-M relocation stage each operates.
+
+**Relationship to other gates.** The Initiative Authorization Gate does not replace Stage 1's Conception Gate (which validates business purpose), Stage 2's Behavioral Specification Gate (which defines the envelope), Stage 3's Behavioral Release Gate (which clears engineering and adversarial evidence), or the Stage 4 Operational Readiness Gate (which authorises production deployment). It is an additional gate layered on top: a system that holds Initiative Authorization but loses one of the underlying gate conditions reverts to the underlying gate's enforcement (an Initiative-authorised agent whose Stage 4 envelope is withdrawn under AEM Tier 4 reversion loses both Stage 4 and Initiative Authorization simultaneously).
+
+Full normative specification: `initiative-authorization-gate.md`.
+
 ### Stages 5 and 6 — Operate and Maintain
 
 Stages 5 (Operate) and 6 (Maintain) run concurrently from deployment until the retirement trigger fires. Stage 5 governs behavioral observability in production: output quality rate, behavioral envelope compliance rate, task success rate, escalation rate, drift indicators, user experience signals, safety signals, human-in-the-loop queue management, and agent incident management across five incident classes (quality, behavioral, safety, persona, adversarial). Stage 6 governs planned behavioral maintenance: recalibration cycles, foundation model update governance, knowledge base refresh, and memory governance. Full specifications: `agent-operations.md` and `agent-maintenance.md`.
@@ -144,6 +177,8 @@ These concepts have no direct analog in software delivery governance. Each one r
 ### 1. Composite Agent State
 
 An agent product's behavioral identity is not determined by its application code alone. It is determined by five components simultaneously: application code (commit hash), system prompt (version label and content hash), foundation model (provider, model name, snapshot version where available), knowledge base (snapshot ID, document count, source manifest hash), and memory state (content hash or stateless designation). The Composite State Hash (CSH) is computed as a hash over all five component identifiers. When any component changes — including a model update initiated by the provider without the engineering team's action — the CSH changes, the behavioral identity of the product changes, and a new composite state manifest must be filed. The CSH is the reference for incident investigation: every production interaction is associated with the CSH active at the time, so a behavioral deviation can be traced to which component changed and when. Full specification: `agent-composite-versioning.md`.
+
+**Knowledge-base component: claim set + governance metadata.** For agent products that draw on an IGM-governed substrate, the knowledge-base component of the CSH must hash both the claim set (the canonical claim identifiers and content hashes) **and** the IGM governance metadata: current authorities (Semantic, Assertion, Inference, Revision) for each claim family in scope, the epistemic tier of every cited claim, the contradiction status (typed contradictions present, resolved, or preserved per IGM Principle 4), and the decay schedule (decay class and next revalidation due date per IGM Principle 5 / AEnt-M Principle 10). A change in any IGM-governance metadata — an authority succession, an epistemic-tier promotion or demotion, a newly typed contradiction, or a decay-class re-classification — is a CSH change, even if the underlying claim text is unchanged. This is the operational consequence of treating the substrate as part of the agent's behavioral identity: governance state of the substrate co-determines agent behavior, and substrate-governance changes must be detected with the same fidelity as model or prompt changes. See `governance/governance-integration-note.md` (Rule R4) for how this composes with AEM evidence-bundle requirements.
 
 ### 2. Behavioral Drift
 
@@ -251,6 +286,7 @@ The governance agents used in APLC governance are themselves agent products. An 
 | `agent-retirement.md` | Stage 7 | Retirement triggers, user migration, record retention, regulated decommission |
 | `agent-composite-versioning.md` | All | Composite state hash, manifest format, incident investigation protocol |
 | `agent-regulatory-classification.md` | Stage 1 | EU AI Act classification walkthrough, conformity assessment path selection |
+| `initiative-authorization-gate.md` | Parallel to Stage 4 | Initiative Authorization Gate — three-condition checklist, accountable signatories, quarterly review, auto-revocation triggers |
 | [governance/knowledge-base.md](governance/knowledge-base.md) | All | APLC Governance Knowledge Base architecture |
 | [governance/agents.md](governance/agents.md) | All | Ten APLC Governance Agents with full specifications |
 | [governance/tool-stack.md](governance/tool-stack.md) | All | Twelve governance tools with per-agent access control |

@@ -168,6 +168,60 @@ These anti-patterns appear consistently in agent product deployments that lack A
 
 ---
 
+## Initiative Metrics and Audit
+
+The Initiative Authorization Gate (`initiative-authorization-gate.md`) authorises an agent to surface action opportunities not assigned by a human, for specifically enumerated `(domain, action class)` pairs. Once authorised, the agent's exercise of initiative must be measurable, recorded, and periodically audited — otherwise the gate is a one-time approval that does not survive contact with operations. This section defines the operational artefacts required.
+
+### Defining "action opportunity"
+
+An *action opportunity* is a structured agent recommendation that meets all three of the following criteria:
+
+1. **Identifies a specific organizational action.** A pointer to a concrete action a named human role could take — "review the configuration of cross-border settlement programme X before the CSDR amendment effective date" is specific. "Consider regulatory implications" is not.
+2. **Provides a reasoning chain showing which substrate claims informed it.** The agent's recommendation cites the claims (with claim identifiers and epistemic tiers) that, taken together, justify surfacing the opportunity. A recommendation without a substrate-anchored reasoning chain is a freeform assertion, not an opportunity from a governed substrate.
+3. **Is logged with timestamp, recommended action, consequence class, and epistemic tier.** The log entry is filed at the moment of surfacing, regardless of whether the opportunity is subsequently accepted, deferred, or rejected by the human accountability layer.
+
+A recommendation that meets all three criteria is an action opportunity for the purposes of audit and metric computation. A recommendation missing any criterion is not — it may be a useful agent output, but it does not count toward the metrics and is not subject to the audit guarantees in this section.
+
+### Recording discipline
+
+**All opportunities recorded regardless of human acceptance.** The opportunity log is an unconditional log: every opportunity surfaced is recorded at the moment of surfacing. Opportunities that the human accountability layer accepts, opportunities that are routed to a queue and never reviewed, opportunities that are immediately rejected, and opportunities that are accepted but not acted on are all recorded with identical structure. The log is the substrate for every initiative metric and every initiative audit; gaps in the log invalidate downstream measurement.
+
+The log retention period matches the regulatory retention period for the consequence class of the action proposed (for EU high-risk system contexts: ten years from the date of surfacing, even for opportunities that were rejected and never acted on, because the rejection itself is part of the governance evidence).
+
+### Surfacing rate vs acceptance rate
+
+The two rates measure different things and must not be conflated.
+
+| Metric | Definition | What it tells you |
+|---|---|---|
+| **Surfacing rate** | Action opportunities surfaced per unit time, per `(domain, action class)` pair | Whether the agent is exercising initiative at all; whether the substrate is rich enough to surface opportunities; whether the agent's perception capability is engaged. |
+| **Acceptance rate** | Fraction of surfaced opportunities accepted by the human accountability layer | Whether the agent's surfaced opportunities align with institutional priorities; whether the substrate-state assumptions the agent is reasoning over reflect the human reviewers' assessment of value. |
+
+A high surfacing rate with a low acceptance rate indicates the agent is producing volume without value — the substrate is engaging the agent's perception, but the perceptions do not match what the human layer would act on. A low surfacing rate with a high acceptance rate indicates the agent is conservative — every opportunity it surfaces is acted on, but the agent is missing opportunities it could have surfaced. Neither is intrinsically wrong; both are signals that warrant investigation.
+
+### Quarterly initiative audit
+
+Aligned to the quarterly Initiative Authorization Gate review. The audit performs three checks on the prior-quarter opportunity log:
+
+**1. Stratified sample of opportunities.** A stratified random sample of opportunities is selected, stratified by `(domain, action class)` pair and by accepted/rejected outcome, with sample sizes calibrated so that each pair × outcome cell has enough observations to support a meaningful review. The sample is reviewed by a domain expert independent of the team operating the agent.
+
+**2. Reasoning-chain traceability verification.** For each sampled opportunity, the audit verifies that the reasoning chain cited in the log can be traced to actual substrate claims at the substrate state recorded at surfacing time (per the CSH recorded with the log entry). A reasoning chain that cites claims that do not exist in the substrate at the cited state, or that cites claims at an epistemic tier different from what is recorded in the substrate, is a finding. The finding indicates either log corruption (the log entry does not match what the agent actually used) or substrate-state drift inside the action (the substrate moved between the agent's reasoning and the log write); both are governance defects.
+
+**3. Rejection-rationale documentation.** For every opportunity in the sample that the human layer rejected, the audit verifies that a rejection rationale was documented. "Rejected without comment" is itself a finding — the human accountability layer is responsible for documenting why it rejected an opportunity, both because the rationale is part of the audit trail and because rejection patterns are how the team learns whether the agent's surfacing is calibrated to institutional priorities.
+
+### Acceptance rate threshold
+
+**Acceptance rate < 20% over a quarter triggers a re-gate.** An agent whose opportunities are accepted less than 20% of the time is signalling one of two conditions:
+
+- **Misalignment with priorities.** The agent's surfaced opportunities, while internally well-reasoned, do not match what the human accountability layer considers worth acting on. The substrate may be deep enough but the constraint architecture may not capture what the institution actually values; the agent is reasoning correctly over the wrong axis. Remediation: review the constraint architecture, refresh the held-out reference set used in the constraint-legibility validation (per `initiative-authorization-gate.md` Condition 2), retrain the classification.
+- **Initiative conditions not actually met.** The substrate may have looked deep enough, the constraints may have looked machine-readable, but the operational evidence — the human reviewers' rejection patterns — indicates that one or more of the three initiative conditions is not actually being satisfied in practice. Remediation: re-run the Initiative Authorization Gate with current evidence; the prior authorisation is revoked pending review.
+
+In either case, a < 20% acceptance rate is not a metric to be left running; it is a signal that the gate evidence and the operational reality have diverged. The system steward and IGM revision authority initiate the re-gate within 10 business days of the threshold breach. The agent reverts to assigned-task execution for the affected pairs during the re-gate.
+
+The 20% threshold is a default. Domains with extremely high opportunity costs (a quality bar where most opportunities surface true risks but are rejected because mitigation is already underway) or with explicit screening expectations (the agent is intentionally surfacing wide and the human layer is intentionally narrowing) may calibrate the threshold higher or lower at first authorisation; the threshold is recorded in the gate record and is itself part of the audit.
+
+---
+
 ## Integration with Existing Frameworks
 
 The APLC does not replace any existing governance framework. It is designed to integrate with the frameworks that regulate and manage agent products in real deployment contexts.

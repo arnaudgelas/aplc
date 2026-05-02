@@ -12,6 +12,20 @@ It is rigorous where it needs to be. It is practical by design. And it is the mi
 
 ---
 
+## Where to Start (Across the Stack)
+
+The Agentic Engineering Manifesto, ASDLC, and APLC are a layered set, but each is independently adoptable. Pick the one that matches the pain you are feeling now — you do not need to adopt all three at once, and you do not need to read them in order.
+
+| If your pain is… | Start with… |
+| --- | --- |
+| **An AI agent already in market or about to be**, and you cannot describe its behavior, prove its drift, or govern foundation-model updates that change it without warning | **[APLC](https://github.com/arnaudgelas/aplc)** — the Agentic Product Lifecycle. Governs the agent product itself: behavioral specification, evaluation, drift, foundation-model update governance, regulated retirement. |
+| **Software delivery by teams using AI agents to write code**, where the inner loop runs faster than your demand validation, release governance, or operational readiness can keep up | **[ASDLC](https://github.com/arnaudgelas/asdlc)** — the Agentic Software Delivery Lifecycle. Governs the four-layer delivery lifecycle around agent-built software: demand, execution, release, operations. |
+| **Engineering practice itself** — how humans steer intent, how agents execute within governed boundaries, what verified outcomes look like inside the inner loop | **[Manifesto](https://github.com/arnaudgelas/agentic-engineering-manifesto)** — the Agentic Engineering Manifesto. Defines the inner engineering loop that both APLC Stage 3 and ASDLC Layer 2 reference. |
+
+Each framework is independently useful. Together they form a complete governance stack for organisations dealing with both agent-built software and agent products in market.
+
+---
+
 ## Why the APLC Exists
 
 Software delivery has the ASDLC. AI model development has model governance frameworks. But agent products — systems that behave, that interact with users, that make decisions on their behalf — fall between those two worlds. They are neither pure software nor pure models. They are *composite systems* whose behavior is determined by five components simultaneously:
@@ -127,13 +141,21 @@ All governance agent actions and all lifecycle artifacts are stored in the **APL
 
 ---
 
-## Getting Started
+## Entry Points
 
-**New to the APLC?** Start with [`aplc.md`](aplc.md) for the full lifecycle architecture, then [`aplc-guide.md`](aplc-guide.md) for implementation guidance including minimum viable governance at each stage and the five APLC maturity levels.
+The APLC is a toolkit, not a sequential adoption mandate. Adopt it where your pain is most acute and expand from there. Five common entry points:
 
-**Already have an agent in production without APLC governance?** Start at Stage 5. Establish a behavioral baseline retrospectively, derive a behavioral specification from observed behavior, conduct a retrospective red-team, and file a composite state manifest for the current deployment. Then work forward from there.
+**You have an agent in production already, with no APLC governance** → **Stage 5 (Operate)**. Establish a behavioral baseline retrospectively, derive a behavioral specification from observed behavior, run a retrospective red-team across the six attack categories, and file a composite state manifest for the current deployment. Then work backward to fill in earlier stages as time permits. See [`agent/agent-operations.md`](agent/agent-operations.md).
 
-**Deploying in a regulated industry?** Start with [`agent-regulatory-classification.md`](agent/agent-regulatory-classification.md). Determine the EU AI Act risk class before anything else — regulatory requirements are design constraints from conception onward, not a documentation exercise at release.
+**Foundation-model updates are silently changing your agent's behavior** → **Stage 6 (Maintain)**. Implement foundation-model update governance: detect updates via CSH monitoring, test them against the behavioral evaluation portfolio, and make an explicit accept-or-reject decision before letting an update through to production. The default is reject unless the regression suite passes — not accept unless something obviously breaks. See [`agent/agent-maintenance.md`](agent/agent-maintenance.md).
+
+**You are about to deploy an agent for the first time** → **Stage 3 evaluation and the Behavioral Release Gate**. Run the four-layer evaluation portfolio (engineering, probabilistic behavioral coverage, adversarial red-team, human preference) and pass the seven release-gate conditions before deployment. File the composite state manifest. See [`agent/agent-behavioral-evaluation.md`](agent/agent-behavioral-evaluation.md) and [`agent/agent-release-governance.md`](agent/agent-release-governance.md).
+
+**You are scoping a new agent product from scratch** → **Stage 1 (Conceive)**. Define the agent product, the trust architecture, the persona, and the EU AI Act regulatory classification before any specification work begins. Nothing in Stage 2 can be correctly specified without a complete Stage 1 — every behavioral requirement traces back here. See [`agent/agent-conception.md`](agent/agent-conception.md).
+
+**You operate in a regulated industry with EU AI Act exposure** → **Stage 1 regulatory classification**. Determine the EU AI Act risk class before architecture decisions: high-risk requirements are design constraints from conception onward, not a documentation exercise at release. See [`agent/agent-regulatory-classification.md`](agent/agent-regulatory-classification.md).
+
+**New to the APLC entirely?** Read [`aplc.md`](aplc.md) for the full lifecycle architecture, then [`aplc-guide.md`](aplc-guide.md) for implementation guidance including minimum viable governance at each stage and the five APLC maturity levels.
 
 The APLC is not all-or-nothing. The guide defines minimum viable governance at each stage, and each stage's minimum bar can be reached without waiting for perfection at the previous one.
 
@@ -203,7 +225,7 @@ The **manifesto** is the engineering execution engine for Stage 3. Every manifes
 
 The **ASDLC** governs software delivery. The APLC governs agent product delivery. They run in parallel, not in competition. The ASDLC governs the infrastructure and platform that hosts the agent; the APLC governs the agent product itself. The APLC's Stage 4 extends the ASDLC's release gate rather than replacing it. Stage 5 extends ASDLC operations governance. Stage 6 extends ASDLC maintenance governance. Both reference the manifesto as the engineering execution standard.
 
-"Extends" has a precise meaning here: ASDLC conditions are required, and the APLC adds additional conditions on top. An agent product that satisfies only APLC conditions without satisfying ASDLC conditions is not fully governed.
+"Extends" has a precise meaning here: APLC alone covers the agent-specific risks — behavioral specification, evaluation, drift, foundation-model update governance, regulated retirement. Full software-delivery governance for the systems that host the agent additionally requires ASDLC, or an equivalent layer (your existing SDLC, ITIL practice, or regulated framework). The two layers compose, but APLC does not depend on ASDLC adoption to be useful: teams adopting APLC against any existing delivery framework keep the agent-specific guarantees the APLC layer provides.
 
 ---
 
