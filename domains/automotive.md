@@ -24,34 +24,89 @@ design and the Stage 1 Conception Gate.
 
 ### AI System Classification
 
-Transport is a critical infrastructure sector under EU AI Act Annex III §2.
-Agent products involved in vehicle safety functions — ADAS, autonomous driving,
-active safety systems — are high-risk under Annex III §2 as safety components
-in critical infrastructure management.
+**Road traffic — not transport — is the sector EU AI Act Annex III §2 names.**
+Point 2 reaches AI systems "intended to be used as safety components in the
+management and operation of critical digital infrastructure, road traffic, or
+in the supply of water, gas, heating or electricity". "Transport" is broader
+than "road traffic" and would sweep in rail, air and maritime, none of which is
+in the point, and the difference decides classification. [Corrected 2026-09-06:
+this section previously opened by calling transport a critical infrastructure
+sector under EU AI Act Annex III §2, and scoped the paragraphs below from that
+reading.] Two limits are operative in the same sentence as any §2 claim: the
+system must be a **safety component**, and it must be in the **management and
+operation of road traffic** — that is, of the traffic system, which is where
+traffic-signal control, traffic management centres and roadside infrastructure
+agents sit. An AI system inside a single vehicle is not managing or operating
+road traffic, so §2 is not the route for it.
 
-**ADAS advisory agents and autonomous driving monitoring agents** are
-unambiguously Annex III §2 high-risk when deployed in operational vehicles. The
-ASIL determination under ISO 26262 must be conducted at Stage 1 alongside the
-EU AI Act classification. Both frameworks impose concurrent obligations: the EU
-AI Act addresses the deployed agent product and its conformity requirements;
-ISO 26262 addresses the software development process and the product's
-functional safety assurance. A deployed ADAS agent product at ASIL C or D will
-be Annex III §2 high-risk under the EU AI Act regardless of ASIL assignment.
+**In-vehicle agent products go through Article 6(1)/Annex I, not Annex III §2.**
+Article 6(1) makes a system high-risk where it "is intended to be used as a
+safety component of a product, or the AI system is itself a product, covered by
+the Union harmonisation legislation listed in Annex I" and that product "is
+required to undergo a third-party conformity assessment" under that
+legislation. Annex I Section B lists Regulation (EU) 2018/858 (approval and
+market surveillance of motor vehicles) and Regulation (EU) 2019/2144 (general
+safety type-approval requirements), which is the type-approval regime ADAS and
+autonomous driving functions already sit inside. Article 2(2) then limits what
+this Regulation adds: "For AI systems classified as high-risk AI systems in
+accordance with Article 6(1) related to products covered by the Union
+harmonisation legislation listed in Section B of Annex I, only Article 6(1),
+Articles 102 to 109 and Article 112 apply. Article 57 applies only in so far as
+the requirements for high-risk AI systems under this Regulation have been
+integrated in that Union harmonisation legislation." — so the Chapter III
+requirements and the Annex VI/VII conformity paths of this Regulation do not
+apply to them,
+and the substantive requirements come from the type-approval framework.
+
+**ADAS advisory agents and autonomous driving monitoring agents** deployed in
+operational vehicles are **not** Annex III §2 systems — an in-vehicle function
+is not a safety component in the management and operation of road traffic —
+and are to be assessed under Article 6(1) against the Annex I Section B
+type-approval entries above. [Corrected 2026-09-06: this paragraph previously
+called them unambiguously Annex III §2 high-risk regardless of ASIL
+assignment; the §2 route rested on the withdrawn "transport" reading.] The
+ASIL determination under ISO 26262 must still be conducted at Stage 1 alongside
+the EU AI Act classification, and both frameworks impose concurrent
+obligations: the AI Act addresses the deployed agent product and its conformity
+route, ISO 26262 the software development process and the product's functional
+safety assurance. ASIL assignment does not determine the AI Act route in either
+direction — Article 6(1) turns on the Annex I product and its third-party
+conformity assessment requirement, not on the ASIL.
 
 **Vehicle diagnostics agents** deployed in production vehicles or in workshop
 diagnostic systems must be assessed based on what decisions their outputs
 enable. A diagnostics agent whose output determines whether a vehicle is
-cleared for continued operation is contributing to a safety-critical decision
-and is likely Annex III §2 in scope. A diagnostics agent whose output is a
-workshop recommendation reviewed by a trained technician before any action is
-taken may be limited-risk with GPAI operator obligations.
+cleared for continued operation is contributing to a safety-critical decision —
+but that does not make it Annex III §2, which reaches only safety components in
+the management and operation of road traffic and not systems inside a single
+vehicle or a workshop; assess it under Article 6(1) against the Annex I Section B
+type-approval entries instead. [Corrected 2026-09-06: previously read likely
+Annex III §2 in scope.] A diagnostics agent whose output is a workshop
+recommendation reviewed by a trained technician before any action is taken is
+outside both routes on the face of the instrument; the Regulation names no
+"limited-risk" class, so what remains is the Article 50 transparency
+obligations where they are triggered, and no high-risk obligation. The Act
+imposes no GPAI obligation on an "operator" (Article 3(8) defines that term as
+"a provider, product manufacturer, deployer, authorised representative, importer
+or distributor"): Chapter V binds the provider of the model, and the deploying
+organisation's own duties follow from whether it is the provider of the
+downstream system (Article 16) or its deployer (Article 26), plus Article 50
+transparency and Article 4 AI literacy at any risk class.
 
 **Fleet management agents** and **warranty claim agents** do not typically
 involve safety-critical vehicle functions and are not automatically Annex III
-§2. They may fall under Annex III §5(b) if they make access decisions affecting
-individuals (insurance-linked fleet scoring, warranty eligibility
-determinations). Classify each agent product type at Stage 1 based on the
-specific decision structure, not the general automotive context.
+§2. Annex III §5(b) reaches only "AI systems intended to be used to evaluate
+the creditworthiness of natural persons or establish their credit score", so it
+covers such an agent only where the agent does that; insurance-linked fleet
+scoring and warranty eligibility determinations are not creditworthiness
+evaluation on the face of the point, and insurance risk assessment and pricing
+is §5(c), limited to life and health insurance, so that point does not reach
+them either. [Classification corrected 2026-09-05: this paragraph previously
+offered §5(b) as the point these agents may fall under if they "make access
+decisions affecting individuals" — that phrase paraphrases the heading of point
+5, not the text of §5(b). No replacement Annex III classification is asserted;
+it has not been signed off.] Classify each agent product type at Stage 1 based
+on the specific decision structure, not the general automotive context.
 
 **ASIL determination at Stage 1** is the single most consequential
 classification decision for automotive agent products, and it must be completed
@@ -64,13 +119,46 @@ suite to the correct ASIL requirements.
 
 ### Conformity Requirements
 
-For high-risk automotive agent products under EU AI Act Annex III §2, the
-conformity assessment path is Annex VII (third-party assessment) — the same
-Annex VII requirement that applies to aviation critical infrastructure safety
-components. A notified body must review the Annex IV technical documentation
-before the EU Declaration of Conformity can be issued. The Stage 4 release gate
-must include notified body certification as a gate condition for agent products
-within vehicle safety functions.
+For agent products this document previously classified as high-risk under EU AI
+Act Annex III §2 — a classification withdrawn in the AI System Classification
+section above, so this section's premise no longer holds and its content is
+retained as a record and as a governance requirement of this framework, not as
+an asserted legal path — this document states that the conformity assessment
+path is Annex VII (third-party assessment) — the same Annex VII reading that `domains/aviation.md` applies to
+aviation critical infrastructure safety components, and one that contradicts
+Art. 43(2), under which providers of the high-risk systems "referred to in
+points 2 to 8 of Annex III" follow the internal-control procedure of Annex VI,
+"which does not provide for the involvement of a notified body"; it has
+therefore not been verified and must not be relied on until reconciled. On that
+same unreconciled reading a notified body would have to review the Annex IV
+technical documentation before the EU Declaration of Conformity can be issued.
+The Stage 4 release gate accordingly carries notified body certification as a
+gate condition for agent products within vehicle safety functions — a gate
+condition resting on that same contradicted reading, which must not be relied
+on as a legal requirement until Art. 43(2) is reconciled, and which is retained
+rather than removed because an undefined gate was judged worse than a marked
+contradiction. The flag below records the full analysis.
+
+> **Flagged 2026-09-05, not resolved — read before relying on this gate
+> condition.** EU AI Act Art. 43(2) states that for the high-risk systems
+> referred to in points 2 to 8 of Annex III, providers follow the conformity
+> assessment procedure based on internal control (Annex VI), which does not provide for the involvement of a notified body.
+> Annex III §2 is point 2.
+> The paragraph above states the opposite of that for the same point, and it
+> cites `aplc/domains/aviation.md` as its authority for that reading — see
+> that file's own flag on the same point. This is load-bearing on a release
+> gate, so the paragraph is left as written rather than withdrawn outright —
+> an undefined gate is worse than a marked contradiction — but the
+> conformity-assessment path and the notified-body gate condition above
+> have not been verified and must not be relied on until reconciled against
+> Art. 43(2). No replacement route is asserted here. **Scope of this flag,
+> narrowed 2026-09-06:** it covers the Annex VII/Art. 43(2) conformity residual
+> only, and does not cover the separate Annex III scoping defect — transport
+> read for road traffic, and in-vehicle ADAS placed under §2 — which is
+> resolved in the AI System Classification section above, in the same sentences
+> as the claims it replaces, rather than flagged. See
+> `inputs/20260905-arnaud/prep/domain-files/domain_files_packet.md` (row 5)
+> for the full analysis and the primary citation.
 
 **UNECE WP.29 R156 (SUMS)** imposes additional conformity requirements for
 software update management in type-approved vehicles. The APLC's composite
@@ -185,14 +273,50 @@ reportable through the applicable accident investigation and reporting
 processes (national road accident reporting obligations vary by jurisdiction;
 confirm the applicable framework for each deployment country).
 
-**EU AI Act Article 73** serious incident reporting applies to high-risk
-automotive agent products. An Article 73 serious incident is one that has led
-to, or may have led to, harm to health or safety. For automotive agent
-products, this encompasses behavioral incidents where the agent product
-contributed to a vehicle accident or near-miss involving injury or significant
-property damage. The incident notification workflow must route safety incidents
-to a person with the authority and the automotive safety domain knowledge to
-assess whether the Article 73 threshold is met. The R155 cybersecurity incident
+**EU AI Act Article 73(1)** binds the *provider* of a high-risk AI system, who
+must report any serious incident to the market surveillance authorities of the
+Member States where the incident occurred. It does not bind "operators" as a
+class — Article 3(8) defines an operator as a provider, product manufacturer,
+deployer, authorised representative, importer or distributor. An organisation
+that uses a third party's agent product is a *deployer*, and its own duty is
+**Article 26(5)**: on identifying a serious incident it must immediately inform
+first the provider, and then the importer or distributor and the relevant
+market surveillance authorities, with Article 73 applying *mutatis mutandis*
+only where the provider cannot be reached.
+
+Each Article 73 deadline is stated here with the duty it governs. The general
+report is due immediately after the provider has established a causal link
+between the AI system and the incident or the reasonable likelihood of such a
+link, and **not later than 15 days** after the provider or, where applicable,
+the deployer becomes aware of it (Art. 73(2)). Where a person has died it is
+due immediately on establishing or suspecting a causal relationship, and **not
+later than 10 days** after awareness (Art. 73(4)). For a widespread
+infringement, or a serious and irreversible disruption of the management or
+operation of critical infrastructure within Article 3(49)(b), it is due
+immediately and **not later than two days** after awareness (Art. 73(3)). An
+infringement of obligations under Union law intended to protect fundamental
+rights is Article 3(49)(c) and carries no shorter clock — it runs on the
+general 15-day period of Article 73(2). Article 73 prescribes no report content
+in any of its eleven paragraphs; the Commission guidance mandated by Article
+73(7) is the forthcoming source for that.
+
+Article 3(49) defines a serious incident as an incident or malfunctioning of an
+AI system that directly or indirectly leads to any of four outcomes: the death
+of a person, or serious harm to a person's health; a serious and irreversible
+disruption of the management or operation of critical infrastructure; the
+infringement of obligations under Union law intended to protect fundamental
+rights; or serious harm to property or the environment.
+
+For automotive agent products this encompasses behavioral incidents where the
+agent product contributed to a vehicle accident or near-miss involving injury
+or significant property damage. A fatal accident is the Article 73(4) case and
+must be reported immediately and not later than 10 days after awareness — not
+on any shorter or longer period read across from another framework. The
+incident notification workflow must route safety incidents to a person with the
+authority and the automotive safety domain knowledge to assess whether the
+Article 73 threshold is met, and must do so early enough that the applicable
+Article 73 period still has room in it. The R155 cybersecurity incident
 reporting and the Article 73 serious incident reporting have different
-addressees and potentially different timelines; both must be addressed in the
-notification workflow.
+addressees and different deadlines; both must be addressed in the notification
+workflow, and the R155 timeline must not be used as a proxy for the Article 73
+one.

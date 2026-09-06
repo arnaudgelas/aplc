@@ -116,9 +116,9 @@ Institutional memory artifacts in Category E vary significantly in the quality a
 - `evidence_age_days`: the number of days since the most recent corroborating observation. Updated each time a new corroborating observation is filed.
 - `evidence_tier`: derived from corroboration_count and evidence_age_days per the table below.
 
-**Evidence tier classification:**
+**Evidence tier classification.** The corroboration counts and age cut-offs in the table below are policy-set defaults — chosen by the authors to make the tiers operable, not derived from a measured relationship between corroboration, age and the continued validity of an observation:
 
-| Evidence Tier | Criteria | Governance agent handling |
+| Evidence Tier | Criteria (policy-set) | Governance agent handling |
 | --- | --- | --- |
 | **High** | corroboration_count ≥ 3 AND evidence_age_days ≤ 365 | Present as established guidance; cite tier in output |
 | **Medium** | corroboration_count ≥ 2 OR (corroboration_count = 1 AND evidence_age_days ≤ 180) | Present with qualification: "supported by limited evidence"; cite tier |
@@ -163,11 +163,11 @@ Governance agents (per [governance agents](agents.md)) are granted read access t
 
 ### Retention Policies
 
-Retention periods are set by the regulatory context of the agent product, not by the AGKB's default policies. The AGKB applies the most restrictive retention requirement across all regulatory frameworks applicable to a given product.
+Retention periods are set by the regulatory context of the agent product, not by the AGKB's default policies — but where no instrument reaches a category, the minimum in the table below is a policy-set default chosen by the authors, and only the ten-year extended column is taken from a named provision. The AGKB applies the most restrictive retention requirement across all regulatory frameworks applicable to a given product.
 
 **Minimum retention periods by artifact category:**
 
-| Artifact Category | Minimum Retention | Extended Retention (EU AI Act High-Risk) |
+| Artifact Category | Minimum Retention (policy-set except where an instrument sets it) | Extended Retention (EU AI Act High-Risk) |
 | --- | --- | --- |
 | Category A — Behavioral Specification Artifacts | Lifecycle + 3 years | Lifecycle + 10 years |
 | Category B — Evaluation Artifacts | Lifecycle + 3 years | Lifecycle + 10 years |
@@ -198,7 +198,7 @@ The AGKB is the highest-value target in the APLC governance ecosystem. It contai
 
 *CSH computation environment integrity.* The system that computes Composite State Hash values must operate in an isolated environment with tamper evidence: (a) the inputs to each hash computation are logged before the computation runs; (b) computed hash values are signed by the computation environment's key; (c) the receiving governance layer verifies the signature before accepting a CSH value. A CSH value without a valid computation environment signature is not accepted as a governance record. A compromised CSH computation environment falsifies the entire audit chain.
 
-*AGKB compromise incident class.* An AGKB compromise — unauthorized modification of any AGKB record, unauthorized access to restricted-classification artifacts, or signature verification failure indicating tampering — is a governance incident of the highest severity. Immediate response: (a) suspend all governance decisions that relied on potentially compromised AGKB records until integrity can be verified; (b) notify the accountable human, Technical Owner, and legal/risk team simultaneously; (c) initiate a full integrity audit of AGKB records from the suspected compromise window; (d) assess regulatory notification obligations (EU AI Act Article 73 for affected high-risk systems; DORA Article 19 for financial services deployments). An AGKB compromise is not an IT incident to be handled at the infrastructure layer — it is a governance event with product-level consequences for every agent product whose evidence records may have been affected.
+*AGKB compromise incident class.* An AGKB compromise — unauthorized modification of any AGKB record, unauthorized access to restricted-classification artifacts, or signature verification failure indicating tampering — is a governance incident of the highest severity. Immediate response: (a) suspend all governance decisions that relied on potentially compromised AGKB records until integrity can be verified; (b) notify the accountable human, Technical Owner, and legal/risk team simultaneously; (c) initiate a full integrity audit of AGKB records from the suspected compromise window; (d) assess regulatory notification obligations, each against its own clock — EU AI Act Article 73(1), which obliges the *provider* of an affected high-risk system (not "operators": Article 3(8) reads far more broadly, and a deployer's own duty is Article 26(5)) to report a serious incident to the market surveillance authorities not later than 15 days after awareness in the general case (Art. 73(2)), 10 days where a person has died (Art. 73(4)), and two days for a widespread infringement or a serious and irreversible disruption of critical infrastructure under Article 3(49)(b) (Art. 73(3)); and DORA Article 19 for financial services deployments. An AGKB compromise is not an IT incident to be handled at the infrastructure layer — it is a governance event with product-level consequences for every agent product whose evidence records may have been affected.
 
 *Network isolation.* The AGKB must not be accessible from the production agent's runtime environment through any direct network path. Governance agents access the AGKB through the defined tool stack interfaces (T01–T13); product agents do not access the AGKB directly. The network boundary between the production agent runtime and the AGKB is enforced at the infrastructure layer (network ACL, API gateway policy), not by behavioral specification alone.
 
@@ -416,7 +416,7 @@ Staleness detection is not fully automatable — whether a source document chang
 
 **Regulatory source registration.** The Knowledge Source Registry must include entries for the regulatory frameworks cited in each agent product's behavioral specifications and safety requirements — not only for knowledge base content documents. Regulatory sources are registered at Stage 1, when the regulatory classification is completed, and are maintained by the Regulatory Owner rather than the knowledge base content owners.
 
-Required registry entries for regulatory sources: the official regulatory body and document reference (e.g., "European Parliament and Council, Regulation (EU) 2024/1689 (EU AI Act), OJ L 2024/1689"); the specific articles and annexes cited in the behavioral specification; the source monitoring mechanism (official gazette feed, regulatory body publication RSS, legal database update alert); the staleness threshold (default 30 days for regulatory content — regulatory changes can invalidate behavioral constraints without warning); and the Regulatory Owner as the responsible contact for staleness alerts.
+Required registry entries for regulatory sources: the official regulatory body and document reference (e.g., "Regulation (EU) 2024/1689 of the European Parliament and of the Council (EU AI Act), OJ L, 2024/1689, 12.7.2024"); the specific articles and annexes cited in the behavioral specification; the source monitoring mechanism (official gazette feed, regulatory body publication RSS, legal database update alert); the staleness threshold (policy-set default of 30 days for regulatory content — regulatory changes can invalidate behavioral constraints without warning); and the Regulatory Owner as the responsible contact for staleness alerts.
 
 When the Knowledge Staleness Sentinel detects a change in a registered regulatory source, the alert is routed to the Regulatory Owner (not the Behavioral Owner) for materiality determination. A regulatory source change that affects any active behavioral constraint triggers a mandatory specification review under the Specification Health Monitoring process, in addition to any regulatory re-classification assessment. Regulatory source changes are unconditional review triggers — they activate regardless of all other specification health indicators.
 
@@ -434,7 +434,7 @@ Conflict detection is partially automated by the Constraint Consistency Checker 
 
 ### Source Monitoring
 
-For Category E institutional memory artifacts — particularly the Failure Mode Catalog and Specification Pattern Library — the AGKB maintains awareness of whether the underlying evidence supporting each catalog entry remains current. When the agent products that sourced a failure mode catalog entry are retired, the entry is not removed; it is marked with a provenance age indicator that notes how long ago the originating evidence was produced. Entries older than three years without corroboration from more recent product experience are flagged for human review to assess whether they remain accurate descriptions of failure modes the organization's current technology stack can produce.
+For Category E institutional memory artifacts — particularly the Failure Mode Catalog and Specification Pattern Library — the AGKB maintains awareness of whether the underlying evidence supporting each catalog entry remains current. When the agent products that sourced a failure mode catalog entry are retired, the entry is not removed; it is marked with a provenance age indicator that notes how long ago the originating evidence was produced. Entries older than a policy-set three years without corroboration from more recent product experience are flagged for human review to assess whether they remain accurate descriptions of failure modes the organization's current technology stack can produce.
 
 ### AGKB Information Classification
 
@@ -455,7 +455,7 @@ AGKB artifacts carry an information classification label that governs their hand
 
 **Classification enforcement.** The AGKB Governance Agent enforces classification at query and context injection time: governance agents may not receive artifacts with a classification higher than their authorized access scope. Human access to RESTRICTED artifacts requires a documented access request with need-to-know justification, approved by the Regulatory Owner. Access grants are logged in the AGKB audit trail.
 
-**Physical and logical controls.** RESTRICTED artifacts must be stored in a separately access-controlled partition of the AGKB with additional authentication requirements (multi-factor authentication for access, automatic session timeout after 15 minutes of inactivity). CONFIDENTIAL artifacts require organizational authentication but do not require the additional partition controls.
+**Physical and logical controls.** RESTRICTED artifacts must be stored in a separately access-controlled partition of the AGKB with additional authentication requirements (multi-factor authentication for access, automatic session timeout after a policy-set 15 minutes of inactivity). CONFIDENTIAL artifacts require organizational authentication but do not require the additional partition controls.
 
 ---
 

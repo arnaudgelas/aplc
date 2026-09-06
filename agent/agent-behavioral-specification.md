@@ -1,6 +1,6 @@
 # Stage 2 — Specify Behaviorally: The Agent Behavioral Specification
 
-*Primary Stage 2 document of the Agentic Product Lifecycle. Extends `companion-re-framework.md` from engineering specification to product specification. The behavioral specification is the product's constitution — what the agent does, how it does it, what it never does, and how it handles the edge. Audience: specification analysts, product owners, domain experts, safety engineers, engineers (who implement), and non-engineers (who review and approve).*
+*Primary Stage 2 document of the Agentic Product Lifecycle. Extends the agentic engineering manifesto's companion RE framework (`agentic-engineering-manifesto/companion/re-framework.md`) from engineering specification to product specification. The behavioral specification is the product's constitution — what the agent does, how it does it, what it never does, and how it handles the edge. Audience: specification analysts, product owners, domain experts, safety engineers, engineers (who implement), and non-engineers (who review and approve).*
 
 ---
 
@@ -12,7 +12,7 @@ Stage 2 translates the agent product brief (Stage 1) into a behavioral specifica
 
 ## Relationship to the RE Framework
 
-The companion RE framework (`companion-re-framework.md`) provides the vocabulary and technical specification structures that this document depends on: behavioral envelopes, probabilistic assurance targets, hard requirements versus performance targets, the single-source principle, tiered lifecycle governance, and the two-axes classification matrix. Readers who have not read the RE framework should do so before working with this document. What follows is a reference to the key structures this document extends, not a re-derivation of them.
+The companion RE framework (`agentic-engineering-manifesto/companion/re-framework.md`) provides the vocabulary and technical specification structures that this document depends on: behavioral envelopes, probabilistic assurance targets, hard requirements versus performance targets, the single-source principle, tiered lifecycle governance, and the two-axes classification matrix. Readers who have not read the RE framework should do so before working with this document. What follows is a reference to the key structures this document extends, not a re-derivation of them.
 
 The RE framework was written for the engineering component level: how to specify an individual agent component, how to structure its behavioral envelope, how to assign its autonomy tier. Stage 2 of the APLC applies all of that at the product level — the level of the agent as a deployed product interacting with real users in a real operational context.
 
@@ -98,11 +98,11 @@ Performance targets at the product level must cover at minimum:
 - *Maximum cost per successful interaction:* the total cost ceiling (foundation model inference + knowledge base retrieval + tool API calls + HITL review allocation) per interaction that achieves a successful outcome, denominated in USD or the organization's accounting currency. Expressed as a hard ceiling, not a target.
 - *Maximum monthly operating cost:* the total product operating cost ceiling per calendar month at the specified interaction volume. This is the Business Owner's economic commitment; it must be signed by the Business Owner at the Behavioral Specification Gate, not at the Operational Readiness Gate.
 - *HITL cost ratio target:* the expected proportion of total operating cost attributable to human review, expressed as a range (minimum: human oversight design requirement; maximum: acceptable overhead). Both bounds must be specified — a ratio below the minimum indicates under-escalation; a ratio above the maximum indicates escalation logic failure or autonomy tier misconfiguration.
-- *FinOps drift alert threshold:* the percentage above the cost envelope baseline at which a cost anomaly alert fires. Default: 20%. The threshold must be pre-committed before production; a threshold set after the first cost anomaly is rationalization, not governance.
+- *FinOps drift alert threshold:* the percentage above the cost envelope baseline at which a cost anomaly alert fires. Policy-set default: 20%, a figure chosen by the authors rather than derived from observed cost variance. The threshold must be pre-committed before production; a threshold set after the first cost anomaly is rationalization, not governance.
 
 A behavioral specification without a cost envelope is incomplete at Layer 3. The Stage 4 Operational Readiness Gate requires a signed cost envelope filed before deployment.
 
-Additional performance targets are required for high-risk EU AI Act systems: accuracy across defined demographic subgroups (Article 10 data governance and Article 15 accuracy requirements), robustness under distribution shift, and response latency at p50/p95 under expected production load.
+Additional performance targets are required for high-risk EU AI Act systems: accuracy across defined demographic subgroups (Article 10 data governance and Article 15 accuracy requirements), robustness under distribution shift, and response latency at p50/p95 under expected production load, those two percentiles being a policy-set reporting choice.
 
 ### Layer 4: Adaptation Scope
 
@@ -334,13 +334,13 @@ For EU high-risk systems, the privacy requirements must be consistent with the G
 
 ### Explainability Requirements (EU AI Act Article 86)
 
-For agent products deployed in EU high-risk contexts where the agent makes or substantially influences decisions about individuals (as defined by Article 6 and Annex III of the EU AI Act), Article 86 grants affected persons the right to receive a meaningful explanation of the decision. This right has direct behavioral specification implications that must be addressed at Stage 2, not deferred to Stage 4 documentation.
+For agent products deployed in EU high-risk contexts where the agent makes or substantially influences decisions about individuals (as defined by Article 6 and Annex III of the EU AI Act), AI Act Art. 86 grants affected persons the right to receive a meaningful explanation of the decision. This right has direct behavioral specification implications that must be addressed at Stage 2, not deferred to Stage 4 documentation.
 
-**Explainability as a Layer 1 hard boundary.** The agent must be capable of producing, for any decision subject to Article 86, a human-readable explanation of: (1) the principal factors that led to the decision; (2) the data inputs that were most influential; and (3) the behavioral specification clauses that governed the decision. This capability is not optional for high-risk systems — it is an Article 86 compliance requirement and must be specified as a Layer 1 hard boundary: "The agent must not produce a decision affecting an individual without also producing an explanation that satisfies the Article 86 standard."
+**Explainability as a Layer 1 hard boundary.** The agent must be capable of producing, for any decision subject to AI Act Art. 86, a human-readable explanation of: (1) the principal factors that led to the decision; (2) the data inputs that were most influential; and (3) the behavioral specification clauses that governed the decision. This capability is not optional for high-risk systems — it is an AI Act Art. 86 compliance requirement and must be specified as a Layer 1 hard boundary: "The agent must not produce a decision affecting an individual without also producing an explanation that satisfies the AI Act Art. 86 standard."
 
-**Specification requirements.** The behavioral specification must define: the explanation format (the structure, fields, and level of detail required to satisfy the "meaningful" standard for this deployment context); the trigger conditions for explanation generation (any decision subject to Article 86 generates an explanation automatically, not only when requested); the storage and retrieval mechanism (explanations must be stored and retrievable by the data subject for the retention period applicable to the decision); and the escalation path for cases where an explanation cannot be generated (the agent must escalate to human review rather than issue a decision without an explanation).
+**Specification requirements.** The behavioral specification must define: the explanation format (the structure, fields, and level of detail required to satisfy the "meaningful" standard for this deployment context); the trigger conditions for explanation generation (any decision subject to AI Act Art. 86 generates an explanation automatically, not only when requested); the storage and retrieval mechanism (explanations must be stored and retrievable by the data subject for the retention period applicable to the decision); and the escalation path for cases where an explanation cannot be generated (the agent must escalate to human review rather than issue a decision without an explanation).
 
-**Evaluation requirement.** Layer 3 evaluation must include adversarial test cases where a decision is made without a retrievable explanation — the red-team tests whether the explanation generation can be bypassed. Layer 4 human evaluation must assess whether the explanations produced are "meaningful" against the Article 86 standard for a sample of decisions in the product's use case.
+**Evaluation requirement.** Layer 3 evaluation must include adversarial test cases where a decision is made without a retrievable explanation — the red-team tests whether the explanation generation can be bypassed. Layer 4 human evaluation must assess whether the explanations produced are "meaningful" against the AI Act Art. 86 standard for a sample of decisions in the product's use case.
 
 This requirement applies in addition to, not instead of, the GDPR Article 22 automated decision-making requirements specified elsewhere in the APLC. Both sets of rights may be asserted simultaneously for the same decision.
 
@@ -424,7 +424,7 @@ The gate decision is recorded with the name of the assessor, the date, the condi
 
 ---
 
-*See also: `companion-re-framework.md` (RE vocabulary and technical structures), `agent-conception.md` (Stage 1 inputs), `aplc.md` (lifecycle overview), `agent-behavioral-evaluation.md` (Stage 3), `agent-release-governance.md` (Stage 4).*
+*See also: `agentic-engineering-manifesto/companion/re-framework.md` (RE vocabulary and technical structures), `agent-conception.md` (Stage 1 inputs), `aplc.md` (lifecycle overview), `agent-behavioral-evaluation.md` (Stage 3), `agent-release-governance.md` (Stage 4).*
 
 ---
 
@@ -442,7 +442,7 @@ Each behavioral contract in the specification is extended with a machine-readabl
 - From the contract's autonomy tier → gate criteria (which evaluation layers are required)
 - From the contract's constraint list → monitoring rules (what operational signals trigger review)
 
-This derivation chain closes the gap between the specification and its downstream projections. When the behavioral contract changes, the derived evaluation cases, rubrics, and monitoring rules change with it — not by manual update, but by re-running the derivation from the updated source. This is the machine-executable expression of the single-source principle from the RE framework (`companion-re-framework.md`): no projection is authored independently.
+This derivation chain closes the gap between the specification and its downstream projections. When the behavioral contract changes, the derived evaluation cases, rubrics, and monitoring rules change with it — not by manual update, but by re-running the derivation from the updated source. This is the machine-executable expression of the single-source principle from the RE framework (`agentic-engineering-manifesto/companion/re-framework.md`): no projection is authored independently.
 
 ### Behavioral Contract Schema (Machine-Executable Extension)
 
@@ -505,9 +505,9 @@ Machine-executable specifications enable automatic computation of specification 
 
 | Metric | Definition | Minimum threshold at gate |
 | --- | --- | --- |
-| Completeness | Percentage of behavioral contracts with all machine-readable fields populated | 100% for critical and high risk-level contracts; 80% for medium and low |
+| Completeness | Percentage of behavioral contracts with all machine-readable fields populated | 100% for critical and high risk-level contracts; 80% for medium and low (policy-set) |
 | Consistency | Percentage of contracts with no constraint conflicts verified by the Constraint Consistency Checker | 100% — no contracts with unresolved conflicts may proceed to Stage 3 |
-| Coverage | Percentage of stated use cases in the use-case coverage map with a corresponding behavioral contract | 100% for core use cases; 80% for edge cases |
+| Coverage | Percentage of stated use cases in the use-case coverage map with a corresponding behavioral contract | 100% for core use cases; 80% for edge cases (policy-set) |
 | Derivability | Percentage of evaluation cases that were auto-derived from behavioral contracts versus manually authored | Reported as an indicator; no minimum threshold, but declining derivability is a leading indicator of specification–evaluation divergence |
 
 The Derivability metric is informational rather than a hard gate condition. Its purpose is to surface the degree to which the evaluation portfolio has drifted from the specification as its source. A low Derivability score does not block the gate but is a signal to the Behavioral Owner that the specification and the evaluation suite require reconciliation.
@@ -530,7 +530,7 @@ Any change to gate criteria after the Behavioral Specification Gate has been pas
 
 ### Threshold Specification by Risk Level
 
-The following defaults apply to probabilistic assurance targets. These values represent the minimum acceptable thresholds. Behavioral Owners may specify more stringent thresholds; they may not specify less stringent thresholds without Regulatory Owner approval documented in AGKB.
+The following policy-set defaults apply to probabilistic assurance targets — every mean floor and tail-risk limit below was chosen by the authors, not derived from measured agent performance. These values represent the minimum acceptable thresholds. Behavioral Owners may specify more stringent thresholds; they may not specify less stringent thresholds without Regulatory Owner approval documented in AGKB.
 
 | Risk level | Mean performance floor | Tail risk limit | Required evaluation layers | Gate decision authority |
 | --- | --- | --- | --- | --- |
@@ -539,7 +539,7 @@ The following defaults apply to probabilistic assurance targets. These values re
 | Medium | ≥ 0.85 | ≤ 0.01 | Layers 1 and 2 required | Human or governance agent gate decision |
 | Low | ≥ 0.80 | ≤ 0.05 | Layer 1 required | Governance agent gate decision permitted |
 
-The tail risk limit is defined as the probability that a randomly drawn production interaction falls below the behavioral safety floor specified in the behavioral contract. The safety floor is not the same as the mean performance floor: it is the absolute minimum acceptable performance level below which the agent's behavior constitutes a safety or compliance failure, regardless of mean performance across the distribution. A contract may specify a mean floor of 0.90 with a safety floor at 0.60 — meaning average performance must be high, but the tail of the distribution may not reach below 0.60 even for difficult cases.
+The tail risk limit is defined as the probability that a randomly drawn production interaction falls below the behavioral safety floor specified in the behavioral contract. The safety floor is not the same as the mean performance floor: it is the absolute minimum acceptable performance level below which the agent's behavior constitutes a safety or compliance failure, regardless of mean performance across the distribution. A contract may, illustratively, specify a mean floor of 0.90 with a safety floor at 0.60 — meaning average performance must be high, but the tail of the distribution may not reach below 0.60 even for difficult cases.
 
 **Gate decision authority clarification.** For critical and high risk-level contracts, a governance agent may assist the gate process — drafting the gate assessment, summarising evaluation results, flagging conditions — but the gate decision itself must be made by a named human. A gate record showing an agent-generated gate approval for a critical risk-level contract is a governance failure, not a valid gate passage. This constraint is consistent with the governance agent participation framework in `aplc.md`.
 
@@ -547,7 +547,7 @@ The tail risk limit is defined as the probability that a randomly drawn producti
 
 The behavioral specification must define the required confidence interval width for each probabilistic assurance target. Confidence interval width determines the number of evaluation runs required: narrower intervals require more runs, which increases evaluation cost and duration. The specification author makes an explicit cost-quality trade-off when setting confidence interval requirements.
 
-The tradeoff must be documented. A specification that states a performance target but does not state a required confidence interval width is leaving evaluation scope undefined — the evaluation team can satisfy the letter of the specification with an arbitrarily small sample, but the resulting confidence interval may be wide enough to be uninformative about whether the target is actually met. Minimum required documentation: the target value, the required confidence interval half-width, and the confidence level (typically 90% or 95%), which together determine the minimum evaluation sample size.
+The tradeoff must be documented. A specification that states a performance target but does not state a required confidence interval width is leaving evaluation scope undefined — the evaluation team can satisfy the letter of the specification with an arbitrarily small sample, but the resulting confidence interval may be wide enough to be uninformative about whether the target is actually met. Minimum required documentation: the target value, the required confidence interval half-width, and the confidence level (90% or 95% are the policy-set defaults offered here), which together determine the minimum evaluation sample size.
 
 ### Threshold Version Control
 
@@ -559,9 +559,9 @@ Retroactive impact analysis is automatically computed by the Behavioral Evaluati
 
 The behavioral specification must define what constitutes a behavioral regression between evaluation cycles. Regression criteria operate differently from gate criteria: gate criteria determine whether the system may be released; regression criteria determine whether a behavioral change between evaluation cycles requires investigation before the next release cycle proceeds.
 
-**Default regression criterion:** any behavioral contract whose mean performance drops by more than 5 percentage points from the prior evaluation cycle's measurement is flagged as a regression requiring investigation. The investigation must identify the cause before the next behavioral release gate clears. A regression finding does not automatically block the gate — the investigation result determines whether the regression represents a systematic deterioration requiring remediation or a measurement artifact within acceptable variance.
+**Default regression criterion, policy-set:** any behavioral contract whose mean performance drops by more than 5 percentage points from the prior evaluation cycle's measurement is flagged as a regression requiring investigation. The investigation must identify the cause before the next behavioral release gate clears. A regression finding does not automatically block the gate — the investigation result determines whether the regression represents a systematic deterioration requiring remediation or a measurement artifact within acceptable variance.
 
-Behavioral Owners may specify stricter regression criteria for individual contracts — for example, a 2 percentage point drop threshold for a critical risk-level contract covering a safety-sensitive use case. These stricter criteria are stored in the behavioral contract's machine-readable schema and are applied automatically by the Behavioral Evaluation Swarm Coordinator. Less sensitive regression criteria than the 5 percentage point default may not be specified without Regulatory Owner approval.
+Behavioral Owners may specify stricter regression criteria for individual contracts — for example, an illustrative 2 percentage point drop threshold for a critical risk-level contract covering a safety-sensitive use case. These stricter criteria are stored in the behavioral contract's machine-readable schema and are applied automatically by the Behavioral Evaluation Swarm Coordinator. Less sensitive regression criteria than the 5 percentage point default may not be specified without Regulatory Owner approval.
 
 ---
 
@@ -573,13 +573,13 @@ Behavioral specifications age. As the agent system operates, accumulates inciden
 
 The following indicators are monitored continuously against each behavioral specification in AGKB. They are reported in the Stage 5 operational dashboard alongside behavioral performance metrics, because specification currency is a precondition for the validity of those behavioral metrics — a behavioral metric measured against a stale specification is not a meaningful governance signal.
 
-**Absolute age.** Time elapsed since the last full specification review. A specification that has not been reviewed in twelve months is a mandatory review trigger regardless of the other indicators.
+**Absolute age.** Time elapsed since the last full specification review. A specification that has not been reviewed in a policy-set twelve months is a mandatory review trigger regardless of the other indicators.
 
 **Domain change rate.** Frequency of external changes — regulatory updates, domain standard revisions, user population changes — that may affect specification validity. This indicator is supplied by the Knowledge Staleness Sentinel, which monitors the external sources that informed the specification and generates alerts when those sources change (see Knowledge Staleness Sentinel Integration below).
 
 **Incident-derived gap rate.** Frequency of production incidents attributed to specification gaps, as identified through the HITL four-channel learning mechanism in Stage 5 (`agent-operations.md`, Channel 2: specification gap identification). Each such incident represents an operational reality that the behavioral specification did not anticipate and did not specify handling for.
 
-**HITL override rate.** The proportion of agent decisions that human reviewers override. A sustained high override rate indicates that the specification does not adequately capture required behavior — human reviewers are compensating for specification incompleteness at the decision level. An override rate sustained above 10% for 30 consecutive days is a specification review trigger.
+**HITL override rate.** The proportion of agent decisions that human reviewers override. A sustained high override rate indicates that the specification does not adequately capture required behavior — human reviewers are compensating for specification incompleteness at the decision level. An override rate sustained above a policy-set 10% for 30 consecutive days is a specification review trigger. (`agent-operations.md` states the mandatory Stage 2 gap signal at 15% for three consecutive weeks; the two differ and neither is measured.)
 
 **Evaluation anomaly rate.** Frequency of evaluation results that fall outside the ranges predicted by the behavioral contracts' machine-readable fields. When evaluation results are consistently surprising relative to what the specification predicted, the specification model of the system is wrong — either the expected behaviors are miscalibrated, the constraints are mis-expressed, or the risk-level assignments do not reflect actual operational risk.
 
@@ -589,11 +589,11 @@ Any of the following conditions automatically generates a specification review r
 
 | Trigger | Threshold |
 | --- | --- |
-| Incident-derived gap rate | Exceeds 3 incidents per 30-day rolling window |
-| HITL override rate | Sustained above 10% for 30 consecutive days |
+| Incident-derived gap rate | Exceeds 3 incidents per 30-day rolling window (policy-set) |
+| HITL override rate | Sustained above 10% for 30 consecutive days (both policy-set) |
 | Regulatory change | Any regulatory update affecting this agent system's use-case domain |
 | Foundation model update | Any composite state component change affecting the foundation model version |
-| Time elapsed | 12 months since the last full specification review |
+| Time elapsed | 12 months since the last full specification review (policy-set) |
 
 The regulatory change trigger and the foundation model update trigger are unconditional: they activate regardless of the other indicator levels. A regulatory change may invalidate safety requirements or hard boundary definitions regardless of how current the specification appeared before the change. A foundation model update may expose specification gaps that the prior model version did not reach — the specification was effectively calibrated to the prior model's behavioral characteristics.
 
@@ -647,4 +647,4 @@ Individual specification revisions are governed by the review process above. The
 
 **Outcome.** The coherence review produces a structured record: one finding per dimension (consistent / diverged-within-tolerance / material-drift). A "material-drift" finding on any dimension triggers a Stage 1 review — not a Stage 2 revision. The gap is at the conception level. The coherence review record is filed to AGKB alongside the behavioral specification version record.
 
-*See also: `companion-re-framework.md` (single-source principle, probabilistic assurance target format), `agent-behavioral-evaluation.md` (evaluation portfolio structure and probabilistic gate decisions), `agent-operations.md` (HITL four-channel learning and Knowledge Staleness Sentinel), `agent-maintenance.md` (foundation model update governance), `aplc.md` (governance agent participation framework and gate integration).*
+*See also: `agentic-engineering-manifesto/companion/re-framework.md` (single-source principle, probabilistic assurance target format), `agent-behavioral-evaluation.md` (evaluation portfolio structure and probabilistic gate decisions), `agent-operations.md` (HITL four-channel learning and Knowledge Staleness Sentinel), `agent-maintenance.md` (foundation model update governance), `aplc.md` (governance agent participation framework and gate integration).*

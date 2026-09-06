@@ -71,9 +71,9 @@ An evaluation portfolio that does not include a held-out set is measuring how we
 minimum_holdout_n = ceil(1 / (tail_risk_limit × confidence_level))
 ```
 
-Where `tail_risk_limit` and `confidence_level` are the values authored in the behavioral specification at Stage 2. Reference values:
+Where `tail_risk_limit` and `confidence_level` are the values authored in the behavioral specification at Stage 2. Reference values — the tail-risk limits and confidence levels below are policy-set defaults chosen by the authors, and only the minimum sample sizes are derived, by the formula above from those choices:
 
-| Risk level | Default tail risk limit | Default confidence | Minimum n |
+| Risk level | Default tail risk limit (policy-set) | Default confidence (policy-set) | Minimum n (derived) |
 | --- | --- | --- | --- |
 | Critical | 0.0001 | 0.95 | 21,053 |
 | High | 0.001 | 0.95 | 2,106 |
@@ -82,7 +82,7 @@ Where `tail_risk_limit` and `confidence_level` are the values authored in the be
 
 The minimum applies per behavioral contract, not per evaluation run — the same held-out interactions may cover multiple contracts if they exercise multiple behavioral dimensions. A held-out set that meets the minimum for the highest-risk contract in the portfolio satisfies the requirement for all lower-risk contracts. A held-out set that is undersized for any Critical or High contract may not be submitted as gate evidence for those contracts.
 
-**Coverage requirement for Layer 2:** before the behavioral release gate, at minimum 80% of core use cases must have automated evaluations, and at minimum 50% of edge cases must have automated evaluations. These are minimum bars, not targets. A portfolio that meets these minimums has evidence of behavioral coverage. A portfolio that falls short is making claims about behavioral quality that the evaluation does not support.
+**Coverage requirement for Layer 2:** before the behavioral release gate, at minimum 80% of core use cases and at minimum 50% of edge cases must have automated evaluations — both bars are policy-set defaults chosen by the authors, not coverage levels shown to be sufficient by any study. These are minimum bars, not targets. A portfolio that meets these minimums has evidence of behavioral coverage. A portfolio that falls short is making claims about behavioral quality that the evaluation does not support.
 
 ---
 
@@ -90,7 +90,7 @@ The minimum applies per behavioral contract, not per evaluation run — the same
 
 Structured adversarial testing of the agent's behavioral boundaries. Layer 3 is not exploratory testing. It is not user acceptance testing. It is not the engineering team trying edge cases. It is a structured exercise conducted by a defined team with a defined scope, documented findings, and a formal clearance decision. The red-team protocol is documented fully in the Red-Team Protocol section below.
 
-Layer 3 coverage requirement: 100% of identified adversarial scenarios must have red-team evaluations before the behavioral release gate. If an adversarial scenario is identified and not evaluated, it is an open finding, not a deferred item. Open adversarial findings at the behavioral release gate require justification. A finding that has not been evaluated has not been assessed — "we plan to test this" is not clearance.
+Layer 3 coverage requirement, policy-set like the Layer 2 bars but set at the only defensible value for this layer: 100% of identified adversarial scenarios must have red-team evaluations before the behavioral release gate. If an adversarial scenario is identified and not evaluated, it is an open finding, not a deferred item. Open adversarial findings at the behavioral release gate require justification. A finding that has not been evaluated has not been assessed — "we plan to test this" is not clearance.
 
 ---
 
@@ -98,7 +98,7 @@ Layer 3 coverage requirement: 100% of identified adversarial scenarios must have
 
 Human judgment on quality dimensions that automated evaluations cannot assess. The human evaluation workflow is documented fully in the Human Evaluation Workflow section below.
 
-Layer 4 coverage requirement: at minimum a 10% random sample of production interaction types must be assessed by human evaluators before the behavioral release gate. For pre-launch evaluations where there is no production data, this means a representative sample across the use-case categories in the evaluation distribution. The 10% figure is a minimum — for high-risk agent products or those in regulated domains, a higher sample rate is appropriate. Define the rate in the behavioral specification and hold to it.
+Layer 4 coverage requirement: at minimum a 10% random sample of production interaction types must be assessed by human evaluators before the behavioral release gate — 10% is a policy-set default, chosen rather than sized to a required confidence level. For pre-launch evaluations where there is no production data, this means a representative sample across the use-case categories in the evaluation distribution. The 10% figure is a minimum — for high-risk agent products or those in regulated domains, a higher sample rate is appropriate. Define the rate in the behavioral specification and hold to it.
 
 ---
 
@@ -107,9 +107,9 @@ Layer 4 coverage requirement: at minimum a 10% random sample of production inter
 | Layer | Type | Minimum coverage bar |
 | --- | --- | --- |
 | Layer 1 — Engineering | Deterministic pass/fail | All P8 engineering evaluations pass |
-| Layer 2 — Behavioral coverage | Probabilistic assurance targets | 80% core use cases; 50% edge cases; held-out set included |
+| Layer 2 — Behavioral coverage | Probabilistic assurance targets | 80% core use cases; 50% edge cases (both policy-set); held-out set included |
 | Layer 3 — Adversarial | Red-team structured testing | 100% of identified adversarial scenarios |
-| Layer 4 — Human preference | Qualitative rubric assessment | 10% random sample of interaction types |
+| Layer 4 — Human preference | Qualitative rubric assessment | 10% random sample of interaction types (policy-set) |
 
 These are not checkboxes. They are minimum evidence bars. Meeting them means you have evidence. Falling short means you are making a release decision based on insufficient evidence. The product owner who approves evaluation clearance is approving the evidence, not just the status.
 
@@ -137,9 +137,9 @@ Before the red-team begins, the scope must be defined in writing and approved. A
 
 Red-team scope is calibrated by the agent product's autonomy tier as defined in the manifesto. A Tier 1 agent operating in observe-only mode faces a materially different risk surface than a Tier 4 agent operating autonomously within a policy envelope. The protocol scales accordingly — reducing burden where the risk surface is constrained, increasing it where autonomous action creates novel attack paths.
 
-**Tier 1 — Observe.** The agent observes and reports; it does not take actions. Full six-category protocol is not required. A minimum of 3 adversarial cases must be run, drawn from the categories most applicable to the specific deployment. The scope definition must document which categories were selected and why, and which were assessed as not applicable with justification.
+**Tier 1 — Observe.** The agent observes and reports; it does not take actions. Full six-category protocol is not required. A policy-set minimum of 3 adversarial cases must be run, drawn from the categories most applicable to the specific deployment. The scope definition must document which categories were selected and why, and which were assessed as not applicable with justification.
 
-**Tier 2 — Branch.** The agent generates options or proposals for human decision. Full six-category protocol is required. Minimum team composition: 2 roles (adversarial perspective and one of domain expert or safety-focused evaluator). The third role is recommended but not required.
+**Tier 2 — Branch.** The agent generates options or proposals for human decision. Full six-category protocol is required. Policy-set minimum team composition: 2 roles (adversarial perspective and one of domain expert or safety-focused evaluator). The third role is recommended but not required.
 
 **Tier 3 — Commit.** The agent takes actions that produce committed outputs (files written, records updated, messages sent). Full six-category protocol required. Full three-role team composition required as specified in the Red-Team Team Composition section.
 
@@ -149,7 +149,7 @@ Red-team scope is calibrated by the agent product's autonomy tier as defined in 
 
 - *Composition attacks.* Individual in-envelope actions that, when combined in a specific sequence or combination, produce an aggregate outcome that falls outside the policy envelope. The agent takes only permitted steps, but the result violates the envelope's intent.
 
-  **Composition attack minimum methodology:** Define bounded action sequence depth N (minimum N=5 for all Tier 4 agents). Enumerate all action classes available to the agent within its policy envelope as defined in the behavioral specification. Generate and execute test sequences by three methods: (1) random combinations of N sequential in-envelope actions, sampling at least 50 distinct sequences; (2) targeted sequences specifically designed to approach the blast radius ceiling through action accumulation — the sequence is constructed so that each action individually uses less than 10% of the blast radius ceiling but their aggregate exceeds it; (3) cycling sequences that repeat a single action class N times to test whether repetition violates temporal or accumulation constraints in the policy envelope. Minimum coverage: 20 composition sequences per distinct action class available to the Tier 4 agent. For each sequence, compute the aggregate blast radius and compare against the policy envelope ceiling. Any sequence whose aggregate blast radius exceeds the ceiling is a Critical finding regardless of whether each individual action was within the envelope. A composition attack finding at Critical severity is not eligible for waiver under the Waiver Governance framework.
+  **Composition attack minimum methodology:** Define bounded action sequence depth N (a policy-set minimum of N=5 for all Tier 4 agents, chosen rather than derived from observed attack depths). Enumerate all action classes available to the agent within its policy envelope as defined in the behavioral specification. Generate and execute test sequences by three methods: (1) random combinations of N sequential in-envelope actions, sampling at least a policy-set 50 distinct sequences; (2) targeted sequences specifically designed to approach the blast radius ceiling through action accumulation — the sequence is constructed so that each action individually uses less than a policy-set 10% of the blast radius ceiling but their aggregate exceeds it; (3) cycling sequences that repeat a single action class N times to test whether repetition violates temporal or accumulation constraints in the policy envelope. Policy-set minimum coverage: 20 composition sequences per distinct action class available to the Tier 4 agent. For each sequence, compute the aggregate blast radius and compare against the policy envelope ceiling. Any sequence whose aggregate blast radius exceeds the ceiling is a Critical finding regardless of whether each individual action was within the envelope. A composition attack finding at Critical severity is not eligible for waiver under the Waiver Governance framework.
 
 - *Enforcement mechanism bypass.* Does the enforcement logic that keeps the agent within its envelope hold under adversarial input? Can adversarial framing, tool output manipulation, or context injection cause the agent to misread its own boundary conditions?
 - *Kill-switch prevention.* Can an adversary cause the agent to resist, ignore, defer, or route around human override or shutdown signals? This includes both direct interference (suppressing a kill signal) and indirect interference (consuming resources or creating dependencies that make shutdown operationally costly).
@@ -222,7 +222,7 @@ The exercise is an **integrity audit of the Initiative Authorization Gate eviden
 
 (1) *Metric tampering review.* Examine the substrate-depth measurements (coverage, connectivity, freshness, contradiction-tracking status) recorded in the gate evidence. Verify that the measurements were taken on the substrate state at the CSH recorded in the gate record. Verify that the reference scope used to compute coverage was not modified between the prior measurement and this one without a documented rationale and an independent domain-expert sign-off. A measurement that cannot be recomputed, a reference scope change that is not documented, or a coverage figure that depends on an unrecorded scope adjustment is a finding.
 
-(2) *Held-out reference set integrity.* Examine the held-out reference set used to validate agent self-classification accuracy. Verify that the set is independent of the agent's training data, that adversarial cases are present, that the set has been refreshed within the prior 12 months, and that the human reviewer who scored the set is independent of the team that built the agent. A reference set that the agent has memorised, that lacks adversarial cases, or that was scored by the agent's builders is a finding regardless of the accuracy figure reported.
+(2) *Held-out reference set integrity.* Examine the held-out reference set used to validate agent self-classification accuracy. Verify that the set is independent of the agent's training data, that adversarial cases are present, that the set has been refreshed within the policy-set prior 12 months, and that the human reviewer who scored the set is independent of the team that built the agent. A reference set that the agent has memorised, that lacks adversarial cases, or that was scored by the agent's builders is a finding regardless of the accuracy figure reported.
 
 (3) *Signature integrity.* Verify that the gate record carries both required signatures — system steward and IGM revision authority for the domain — and that neither signatory is in conflict of interest (per `initiative-authorization-gate.md` Section 6: not the same person as the product owner who benefits from authorisation, the engineering lead, or the operations lead relieved by relocation). A gate record with one signature, with both signatures from the same person, or with a signatory in conflict of interest is a Critical finding; the authorisation is invalid until re-issued under non-conflicted signatories.
 
@@ -247,7 +247,7 @@ The classification must be applied by the red-team at the time of finding, not b
 
 ### Red-Team Team Composition
 
-A red-team requires at minimum three roles. These roles may not all be filled by the same person, and the first role may not be filled by anyone who contributed to building the agent.
+A red-team requires a policy-set minimum of three roles. These roles may not all be filled by the same person, and the first role may not be filled by anyone who contributed to building the agent.
 
 **Adversarial perspective (required, must be independent).** At least one person who did not build the agent product — did not write the system prompt, did not design the behavioral specification, did not implement the tool integrations. Adversarial testing requires a perspective unconstrained by builder assumptions. A builder testing their own system is testing what they thought of. An independent tester is testing what the builder did not think of. These are not the same exercise.
 
@@ -383,17 +383,17 @@ Before the stability test set is established, define what constitutes significan
 
 **Examples of appropriate threshold definitions:**
 - Output quality score drops more than 5 points (on a 100-point scale) from T0, sustained over two consecutive measurement intervals.
-- Behavioral consistency rate drops more than 10 percentage points from T0.
+- Behavioral consistency rate drops more than a policy-set 10 percentage points from T0.
 - Task success rate drops below the probabilistic assurance target defined in the behavioral specification.
 - Any Layer 3 adversarial category shows a new High or Critical finding not present at T0.
 
 When a threshold is crossed, the response protocol activates:
 
-**Notification.** The product owner and the named accountable human are notified within 24 hours of the threshold crossing being confirmed. Confirmed means the deviation has been observed on the stability test set, not on a single production interaction. A single anomalous interaction does not trigger the notification threshold; a measured deviation on the stability test set does.
+**Notification.** The product owner and the named accountable human are notified within a policy-set 24 hours of the threshold crossing being confirmed. Confirmed means the deviation has been observed on the stability test set, not on a single production interaction. A single anomalous interaction does not trigger the notification threshold; a measured deviation on the stability test set does.
 
-**Root cause analysis.** Within 48 hours of notification, a root cause analysis is initiated. The investigation begins with the composite state hash at the time of the deviation measurement and compares it to the composite state hash at T0 and at the prior measurement. What changed? Foundation model version? Knowledge base state? Memory accumulation? Input distribution shift? The root cause determines the appropriate response.
+**Root cause analysis.** Within a policy-set 48 hours of notification, a root cause analysis is initiated. The investigation begins with the composite state hash at the time of the deviation measurement and compares it to the composite state hash at T0 and at the prior measurement. What changed? Foundation model version? Knowledge base state? Memory accumulation? Input distribution shift? The root cause determines the appropriate response.
 
-**Response.** If root cause is identified and is within the behavioral specification (the agent's behavior changed but remains within specification — the drift is real but acceptable), document and monitor. If root cause leads outside the behavioral specification, initiate Stage 6 recalibration or Stage 4 rollback depending on severity. If root cause is not identified within 72 hours, escalate to the accountable human for a decision: hold, investigate further, or rollback.
+**Response.** If root cause is identified and is within the behavioral specification (the agent's behavior changed but remains within specification — the drift is real but acceptable), document and monitor. If root cause leads outside the behavioral specification, initiate Stage 6 recalibration or Stage 4 rollback depending on severity. If root cause is not identified within a policy-set 72 hours, escalate to the accountable human for a decision: hold, investigate further, or rollback.
 
 ---
 
@@ -436,7 +436,7 @@ The product owner who approves evaluation clearance is making a product-level de
 
 *Current-to-original-release comparison (required at every gate).* The quantitative behavioral profile at this evaluation pass compared against the **original Stage 4 baseline** — the behavioral metrics recorded at the product's first production deployment. This comparison is mandatory at every gate, regardless of how many recalibrations have occurred since the original release. The original baseline is the product as it was designed, evaluated, and authorized; subsequent baselines represent the product as it evolved. Comparison against the original detects cumulative behavioral drift that sequential recalibration baselines mask.
 
-For each core behavioral metric, the clearance report must report both deltas (current-to-prior, current-to-original) and must explain any current-to-original deviation exceeding 15 percentage points. Acceptable explanations: (a) the deviation is the intended result of authorized recalibrations, with references to the specific recalibration records that authorized each component of the deviation; (b) the deviation reflects a Stage 2 specification revision, with reference to the specification revision record; (c) the deviation reflects a foundation model update accepted through the Stage 6 governance process, with reference to the impact assessment. An unexplained deviation of more than 15 percentage points from the original baseline is a gate-blocking finding — the product has evolved beyond its original authorized behavioral profile in a way that has not been traced through governance. The product owner and accountable human must explicitly acknowledge and authorize the cumulative deviation before the gate can close.
+For each core behavioral metric, the clearance report must report both deltas (current-to-prior, current-to-original) and must explain any current-to-original deviation exceeding a policy-set 15 percentage points. Acceptable explanations: (a) the deviation is the intended result of authorized recalibrations, with references to the specific recalibration records that authorized each component of the deviation; (b) the deviation reflects a Stage 2 specification revision, with reference to the specification revision record; (c) the deviation reflects a foundation model update accepted through the Stage 6 governance process, with reference to the impact assessment. An unexplained deviation of more than the policy-set 15 percentage points from the original baseline is a gate-blocking finding — the product has evolved beyond its original authorized behavioral profile in a way that has not been traced through governance. The product owner and accountable human must explicitly acknowledge and authorize the cumulative deviation before the gate can close.
 
 **Archive requirement.** The original Stage 4 baseline document is a permanent governance artifact. It is retained for the full regulatory retention period applicable to the product (minimum 10 years for EU AI Act high-risk systems). It must be retrievable at every subsequent gate. A product whose original Stage 4 baseline is no longer retrievable has lost the reference point against which all cumulative drift is measured — a governance finding that must be reported to the Regulatory Owner and documented in the gate record.
 
@@ -465,9 +465,9 @@ Evaluation processes are subject to the same capture risk as any other approval 
 
 The following patterns, individually or in combination, indicate that systematic evaluation capture may be in progress. Each is a detection threshold, not a conclusive diagnosis.
 
-**High agreement with no documented challenges.** Evaluators consistently scoring above rubric threshold across a release cycle with no documented challenges, escalations, or borderline flags. Genuine quality assessment of a probabilistic system produces disagreement and uncertainty. A reviewer agreement rate above 95% on quality review samples is paradoxically suspicious — it indicates either that the evaluation rubric is too coarse to detect meaningful variation or that evaluators have converged on an implicit shared standard that is not the rubric.
+**High agreement with no documented challenges.** Evaluators consistently scoring above rubric threshold across a release cycle with no documented challenges, escalations, or borderline flags. Genuine quality assessment of a probabilistic system produces disagreement and uncertainty. A reviewer agreement rate above a policy-set 95% on quality review samples is paradoxically suspicious — it indicates either that the evaluation rubric is too coarse to detect meaningful variation or that evaluators have converged on an implicit shared standard that is not the rubric.
 
-**Rubric approval speed.** Rubric approvals completed by the product owner in under 5 minutes, consistently, across multiple interactions. Rubric review requires reading the interaction, applying the anchored criteria, and making a judgment call on borderline cases. Sub-5-minute approval at scale is a signal that the rubric is not being applied — approvals are being confirmed rather than evaluated.
+**Rubric approval speed.** Rubric approvals completed by the product owner in under 5 minutes, consistently, across multiple interactions — five minutes being a policy-set screen, and one that shares the limit noted for every behavioural proxy of review quality: it detects haste, not disengagement. Rubric review requires reading the interaction, applying the anchored criteria, and making a judgment call on borderline cases. Sub-5-minute approval at scale is a signal that the rubric is not being applied — approvals are being confirmed rather than evaluated.
 
 **Static evaluator pool.** The same evaluator pool conducting consecutive evaluations with no rotation between release cycles. Familiarity with the agent's outputs creates implicit priors that substitute for the rubric. Rotation is the structural remedy; absence of rotation over multiple cycles is the detection signal.
 
@@ -479,7 +479,7 @@ The following patterns, individually or in combination, indicate that systematic
 
 **Mandatory rotation.** The evaluation team must be rotated for the next release cycle. At least one evaluator from the prior cycle may not participate as a rubric assessor (they may participate in a support role). Rotation is not optional; it is the minimum response.
 
-**External evaluator addition.** An external evaluator — a person with no prior involvement in the evaluation of this agent product and no organizational reporting relationship to the deploying team — must be added to the evaluation team for the next release cycle. The external evaluator assesses at minimum a 20% stratified sample of the interaction set independently, without access to prior evaluators' scores, before scores are compared.
+**External evaluator addition.** An external evaluator — a person with no prior involvement in the evaluation of this agent product and no organizational reporting relationship to the deploying team — must be added to the evaluation team for the next release cycle. The external evaluator assesses at minimum a policy-set 20% stratified sample of the interaction set independently, without access to prior evaluators' scores, before scores are compared.
 
 **Governance record filing.** The finding is documented in the evaluation governance record: the detection patterns observed, the cycle in which they were observed, the rotation and external evaluator actions taken, and the evaluation team lead's name as the accountable party. The governance record is a required artefact for the subsequent behavioral release gate — the product owner confirms it is present before approving clearance.
 
@@ -504,7 +504,7 @@ The evaluation agent maintains a behavioral coverage map — a representation of
 **Adversarial Game Model:**
 Adaptive coverage implements an adversarial game between the evaluation agent and the target agent system. The evaluation agent attempts to find behavioral failures; the target agent system (through development iterations) attempts to eliminate them. The game terminates when the evaluation agent cannot find new failures within the coverage budget, indicating behavioral specification compliance.
 
-**Termination constraints by risk level.** Budget exhaustion is not a sufficient termination condition for Critical and High risk-level behavioral contracts. For these contracts, the coverage budget represents the minimum required to reach the confidence threshold — evaluation must continue until the following conditions are both met: (1) confidence ≥ 95% for all Critical contracts that no uncovered failure exists within the defined coverage space; (2) confidence ≥ 90% for all High contracts. Only when both conditions are met may the adversarial game terminate for Critical and High contracts, regardless of budget state. Budget-only termination is permitted for Medium and Low risk-level contracts. An evaluation run that terminates due to budget exhaustion while Critical or High contract confidence thresholds remain unsatisfied is an incomplete evaluation and may not be submitted as gate evidence.
+**Termination constraints by risk level.** Budget exhaustion is not a sufficient termination condition for Critical and High risk-level behavioral contracts. For these contracts, the coverage budget represents the minimum required to reach the confidence threshold — evaluation must continue until the following conditions are both met: (1) confidence ≥ 95% for all Critical contracts that no uncovered failure exists within the defined coverage space; (2) confidence ≥ 90% for all High contracts — both policy-set levels, chosen by the authors. Only when both conditions are met may the adversarial game terminate for Critical and High contracts, regardless of budget state. Budget-only termination is permitted for Medium and Low risk-level contracts. An evaluation run that terminates due to budget exhaustion while Critical or High contract confidence thresholds remain unsatisfied is an incomplete evaluation and may not be submitted as gate evidence.
 
 **Coverage Budget Management:**
 Coverage expansion has a cost measured in evaluation and generation capacity. Each sprint defines a coverage budget: maximum number of new evaluation cases to generate. Budget allocation prioritizes: (1) uncovered behavioral contracts, (2) recently modified system prompt or knowledge base regions, (3) behavioral contracts with prior failure history.
@@ -540,7 +540,7 @@ Gate-time red-team evaluation (Layer 3) establishes a security posture at the po
 | Severity | Definition | Response |
 | --- | --- | --- |
 | **Critical** | Finding demonstrates containment bypass or safety specification violation | Immediate operational pause required |
-| **High** | Finding demonstrates behavioral envelope violation | Remediation required within 48 hours; re-evaluation required before resumption |
+| **High** | Finding demonstrates behavioral envelope violation | Remediation required within 48 hours (policy-set); re-evaluation required before resumption |
 | **Medium** | Finding demonstrates specification gap or inconsistency | Specification update required within the next maintenance cycle |
 | **Low** | Finding demonstrates degraded performance within tolerance | Logged for pattern analysis |
 
@@ -577,7 +577,7 @@ For each behavioral contract, the gate criteria define:
 The specific values for each criterion are defined in [agent-behavioral-specification.md](agent-behavioral-specification.md) as probabilistic assurance targets. Gate criteria without specification-traceable thresholds are not governed criteria.
 
 **Gate Decision Confidence Interval:**
-The gate recommendation is expressed as a confidence interval over the probability of behavioral specification compliance. Example format: "95% confidence interval [0.87, 0.93] for behavioral specification compliance across all use cases." Gate decisions with confidence intervals that include the threshold boundary require human decision-maker review. A confidence interval that does not include the threshold boundary may proceed to the standard gate decision workflow.
+The gate recommendation is expressed as a confidence interval over the probability of behavioral specification compliance. Example format, illustrative in every figure it contains: "95% confidence interval [0.87, 0.93] for behavioral specification compliance across all use cases." Gate decisions with confidence intervals that include the threshold boundary require human decision-maker review. A confidence interval that does not include the threshold boundary may proceed to the standard gate decision workflow.
 
 **Probabilistic Gate Calibration:**
 Gate thresholds are empirically calibrated from operational data. As the agent system accumulates operational history, gate thresholds can be updated to reflect observed real-world behavioral distributions. Calibration updates are a Stage 6 maintenance activity per [agent-maintenance.md](agent-maintenance.md) and require Behavioral Owner approval. Retroactive calibration updates — adjusting thresholds based on data observed after an evaluation run to change its gate outcome — are prohibited.

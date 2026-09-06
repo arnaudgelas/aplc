@@ -17,7 +17,7 @@ For agent products, engineering loop completion is necessary but not sufficient.
 
 The agent product inner loop defined in this document is the Stage 3 development cycle that governs this additional iterative work. It runs in parallel with the engineering loop. It does not replace it. The engineering loop governs the deterministic components; the agent product inner loop governs the behavioral evaluation portfolio that runs alongside and on top of those components. Stage 3 is complete only when both loops have reached their exit conditions.
 
-A critical difference from software delivery: in software, "done" means the code does what the specification required. In agent product development, "done" means the Composite Agent State — all five components simultaneously — produces behavioral outputs that meet the probabilistic assurance targets in the behavioral specification, withstand adversarial evaluation at the required severity thresholds, and satisfy human evaluators on quality dimensions that automated evaluation cannot assess. This is a higher standard. It requires more iterations. Planning Stage 3 as if it were a software development phase will systematically underestimate both the duration and the evaluation investment required.
+A critical difference from software delivery: in software, "done" means the code does what the specification required. In agent product development, "done" means the Composite Agent State — all six components simultaneously — produces behavioral outputs that meet the probabilistic assurance targets in the behavioral specification, withstand adversarial evaluation at the required severity thresholds, and satisfy human evaluators on quality dimensions that automated evaluation cannot assess. This is a higher standard. It requires more iterations. Planning Stage 3 as if it were a software development phase will systematically underestimate both the duration and the evaluation investment required.
 
 ---
 
@@ -67,7 +67,7 @@ At the end of each development phase, the evaluation suite runs against the curr
 - Layer 2 coverage measurement: which behavioral specification clauses now have automated evaluations, and whether the probabilistic assurance targets are being met
 - Layer 3 adversarial findings: any new red-team results for the adversarial scenarios targeted in this sprint
 - Layer 4 human preference scores for the interaction types evaluated by human evaluators in this sprint
-- Composite State Hash for the evaluated configuration — computed over all five components of the current state
+- Composite State Hash for the evaluated configuration — computed over all six components of the current state
 
 The CSH computation is not optional and is not deferred to the end of Stage 3. Every evaluated configuration has a CSH. The CSH is the identifier that links evaluation results to the specific composite state that produced them. An evaluation result without a CSH is not associated with any specific state; it cannot be used as behavioral baseline evidence at the Behavioral Release Gate.
 
@@ -93,9 +93,9 @@ Gate readiness is not a phase — it is a state that the evaluation portfolio re
 
 The gate readiness check confirms:
 - Layer 1: all engineering evaluations pass; engineering evidence bundle complete per manifesto P8
-- Layer 2: 80% of core use cases have automated evaluations; 50% of edge cases have automated evaluations; held-out set included
+- Layer 2: 80% of core use cases have automated evaluations; 50% of edge cases have automated evaluations (both policy-set bars, per `agent-behavioral-evaluation.md`); held-out set included
 - Layer 3: 100% of identified adversarial scenarios have red-team evaluations; no Critical or High findings outstanding; red-team report signed by red-team lead
-- Layer 4: minimum 10% stratified sample of interaction types assessed by human evaluators; evaluator qualifications confirmed; rubric scores documented
+- Layer 4: a policy-set minimum 10% stratified sample of interaction types assessed by human evaluators; evaluator qualifications confirmed; rubric scores documented
 - Behavioral baseline document established from the final sprint's evaluation results
 - Composite State Manifest filed for the gate-submission composite state
 - No behavioral regression from the prior sprint's evaluation results
@@ -139,7 +139,7 @@ The regression test suite is the union of all evaluation cases from all prior sp
 - If genuine regression: the development phase returns to address the root cause before the sprint closes
 - If evaluation case obsolescence: the evaluation case is revised through the governed specification revision process, not silently updated
 
-**Regression budget:** The behavioral specification defines an acceptable regression rate — the fraction of prior evaluation cases that may fail before a regression is considered blocking. The default is zero: any regression failure blocks the sprint. For mature evaluation portfolios with known flaky evaluations (evaluations whose probabilistic pass rate is below 95%), a regression budget may be defined at Stage 2 that allows a small number of known-flaky cases to fail without blocking the sprint, provided those cases are documented as flaky and are being actively improved. The regression budget is not a license to ignore regressions — it is a precision tool for managing known evaluation quality limitations without being blocked by them.
+**Regression budget:** The behavioral specification defines an acceptable regression rate — the fraction of prior evaluation cases that may fail before a regression is considered blocking. The default is zero: any regression failure blocks the sprint. For mature evaluation portfolios with known flaky evaluations (evaluations whose probabilistic pass rate is below a policy-set 95%), a regression budget may be defined at Stage 2 that allows a small number of known-flaky cases to fail without blocking the sprint, provided those cases are documented as flaky and are being actively improved. The regression budget is not a license to ignore regressions — it is a precision tool for managing known evaluation quality limitations without being blocked by them.
 
 **Regression testing and CSH.** Regression results are linked to the CSH of the evaluated state. A regression finding links: the evaluation case identifier, the prior sprint CSH at which the evaluation passed, the current sprint CSH at which it failed, and the behavioral specification clause to which the evaluation traces. This traceability enables the Technical Owner to use composite versioning to identify which component change introduced the regression.
 
@@ -149,7 +149,7 @@ The regression test suite is the union of all evaluation cases from all prior sp
 
 Context engineering — the design of the system prompt, tool selection and configuration, retrieval strategy, and context assembly logic — is manifesto P7's domain. In the Stage 3 inner loop, context engineering iteration is a development activity that carries the same evaluation obligation as any other development activity.
 
-**Why context engineering iteration requires re-evaluation.** The Composite Agent State includes the system prompt as one of its five components. A system prompt change changes the CSH. A new CSH means a different behavioral identity. The behavioral evaluation results associated with the prior CSH are not evidence of the new configuration's behavioral quality — they are evidence of the prior configuration's behavioral quality. The evaluation suite must re-run against the new CSH.
+**Why context engineering iteration requires re-evaluation.** The Composite Agent State includes the system prompt as one of its six components. A system prompt change changes the CSH. A new CSH means a different behavioral identity. The behavioral evaluation results associated with the prior CSH are not evidence of the new configuration's behavioral quality — they are evidence of the prior configuration's behavioral quality. The evaluation suite must re-run against the new CSH.
 
 This has an important practical implication: teams that iterate on the system prompt frequently during Stage 3 will run more evaluation cycles. This is the correct behavior, not an inefficiency. Each context engineering iteration is a hypothesis about how to better achieve the behavioral specification targets; the evaluation suite is the mechanism for testing that hypothesis. Teams that avoid re-evaluation after context engineering changes are accumulating behavioral debt — they are building a system whose behavioral properties are less well understood with each unevaluated change.
 
@@ -186,8 +186,8 @@ Stage 3 evaluation coverage does not reach its minimum bars in the first sprint.
 
 | Sprint Range | Coverage Priority | Target at End of Range |
 | --- | --- | --- |
-| Early sprints (first third of Stage 3) | Core use cases from the use-case coverage map; Layer 1 engineering evaluations; happy-path Layer 2 behavioral contracts | Layer 1 complete; Layer 2 core use case coverage at 80% |
-| Mid sprints (middle third of Stage 3) | Edge cases; boundary cases; adversarial scenarios from the red-team scope; human evaluation of representative samples | Layer 2 edge case coverage at 50%; Layer 3 adversarial categories initiated; Layer 4 initial human evaluation sample |
+| Early sprints (first third of Stage 3) | Core use cases from the use-case coverage map; Layer 1 engineering evaluations; happy-path Layer 2 behavioral contracts | Layer 1 complete; Layer 2 core use case coverage at the policy-set 80% |
+| Mid sprints (middle third of Stage 3) | Edge cases; boundary cases; adversarial scenarios from the red-team scope; human evaluation of representative samples | Layer 2 edge case coverage at the policy-set 50%; Layer 3 adversarial categories initiated; Layer 4 initial human evaluation sample |
 | Late sprints (final third of Stage 3) | Held-out set evaluation; remaining adversarial scenarios; adversarial human evaluation sample; regression hardening | All four layers at Behavioral Release Gate minimum coverage bars |
 
 The ramp is not rigid — some products will reach gate readiness faster and others more slowly depending on behavioral complexity and specification completeness. The ramp structure is a planning guide, not a schedule commitment. What the ramp structure guarantees is that coverage grows progressively and that the most important behavioral contracts are validated earliest, so that specification gaps discovered in core use case evaluation are discovered early enough to be resolved without compressing the gate timeline.
@@ -203,7 +203,7 @@ Each inner loop sprint produces a defined set of governance artifacts. These art
 | Artifact | Content | Owner |
 | --- | --- | --- |
 | Sprint evaluation report | Layer 1–4 results for this sprint; comparison to prior sprint results; coverage delta | Evaluation team lead |
-| CSH snapshot | Composite State Hash for the evaluated configuration; component version identifiers for all five components | Technical Owner |
+| CSH snapshot | Composite State Hash for the evaluated configuration; component version identifiers for all six components | Technical Owner |
 | Coverage delta report | Which behavioral specification clauses gained evaluation coverage in this sprint; updated coverage percentage by layer and category | Evaluation team lead |
 | Regression test report | Results of the full prior evaluation suite run against the current CSH; regression findings with root cause; regression budget status | Evaluation team lead |
 
@@ -223,7 +223,7 @@ The following conditions must all be true before the evaluation team lead files 
 
 1. All inner loop sprint artifacts for every sprint in Stage 3 are filed to the AGKB
 2. The Agentic Definition of Done is satisfied for the final sprint: no open Critical red-team findings; no behavioral regression; CSH computed for the gate-submission state
-3. The evaluation portfolio meets all four-layer minimum coverage bars (as specified in [[agent-behavioral-evaluation.md]]): Layer 1 all P8 evaluations pass; Layer 2 80% core use case coverage, 50% edge case coverage, held-out set included; Layer 3 100% adversarial scenario coverage, no Critical or High findings outstanding; Layer 4 10% stratified human evaluation sample with qualified evaluators
+3. The evaluation portfolio meets all four-layer minimum coverage bars (as specified in [[agent-behavioral-evaluation.md]]): Layer 1 all P8 evaluations pass; Layer 2 80% core use case coverage, 50% edge case coverage, held-out set included; Layer 3 100% adversarial scenario coverage, no Critical or High findings outstanding; Layer 4 10% stratified human evaluation sample with qualified evaluators — every coverage figure in this list is a policy-set bar carried from `agent-behavioral-evaluation.md`, not a measured sufficiency level
 4. Behavioral baseline document established from the final sprint's evaluation results; the baseline is the quantitative behavioral profile at gate time
 5. Composite State Manifest filed for the gate-submission composite state, with pinned model version confirmed
 6. Control state record complete with all controls in terminal states (pass, waived-with-current-waiver, or deferred-to-gate with documented rationale) — no controls in stale or requires-human-decision status

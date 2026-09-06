@@ -36,25 +36,55 @@ pharmacovigilance signal is escalated, suppressed, or filed with a regulatory
 authority, the classification analysis must address whether this constitutes a
 decision with significant implications for individuals' health and safety.
 Depending on the scope of the decision and the degree of human oversight
-designed into the trust architecture, pharmacovigilance agents may fall under
-Annex III §5(a) (biometric/health data) or may be assessed as limited-risk with
-enhanced GPAI operator obligations. The classification must be documented at
+designed into the trust architecture, pharmacovigilance agents are **not** reached by
+Annex III §5(a), which is confined to AI systems used "by public authorities or
+on behalf of public authorities to evaluate the eligibility of natural persons
+for essential public assistance benefits and services, including healthcare
+services, as well as to grant, reduce, revoke, or reclaim such benefits and
+services" — a public-authority benefit-eligibility point, not a data-category
+or biometric one (biometrics is Annex III point 1), and a pharmacovigilance
+agent inside a marketing authorisation holder is not a public authority nor
+acting on one's behalf. [Corrected 2026-09-06: this sentence previously glossed
+§5(a) as biometric/health data and routed pharmacovigilance agents to it.] No
+Annex III classification is asserted for these agents here; assess them at
+Stage 1 against EU AI Act Article 6(1)/Annex I (Regulation (EU) 2017/745 on medical
+devices and Regulation (EU) 2017/746 on in vitro diagnostic medical devices are
+EU AI Act Annex I Section A entries), and against the pharmacovigilance obligations of
+Regulation (EC) No 726/2004 and Directive 2001/83/EC, which apply
+regardless. Article 6(1) is cumulative and EU AI Act Annex I membership of the instrument
+is necessary but not sufficient: (a) the agent must be a safety component of,
+or itself be, such a product, and (b) that product must be required to undergo
+a third-party conformity assessment under that legislation. Where no Annex
+reaches the agent, the Regulation names no "limited-risk" class: what remains
+is the Article 50 transparency obligations where they are triggered, together
+with any enhanced downstream duties this framework imposes of its own accord.
+Those duties are not GPAI operator obligations — the Act imposes none on an "operator" (Article 3(8)) and Chapter V binds the
+provider of the model; the deploying organisation's own duties follow from its
+role, Article 16 as provider of the downstream system or Article 26 as its
+deployer. The classification must be documented at
 Stage 1 with the reasoning; do not assume out-of-scope without analysis.
 
 **Regulatory submission agents** that generate dossier content, perform
-consistency checks, and format submissions are typically limited-risk or out of
-Annex III scope: they produce documentation for institutional review, not
-decisions affecting individual access to services. Standard GPAI operator
-obligations apply — transparency documentation, fundamental rights impact
-assessment for high-risk deployments, and logging. However, if a regulatory
+consistency checks, and format submissions are typically out of EU AI Act Annex III scope
+(and reached, if at all, only by the Article 50 transparency obligations —
+"limited-risk" is this document's shorthand, not a class of the Regulation): they produce documentation for institutional review, not
+decisions affecting individual access to services. The applicable duties are the
+deploying organisation's own, by role: Article 50 transparency where the system
+interacts directly with natural persons or generates synthetic content, Article
+4 AI literacy at any risk class, and — only where the organisation is a body
+governed by public law, a private entity providing public services, or a
+deployer of an Annex III point 5(b) or (c) system — the Article 27 fundamental
+rights impact assessment, which is a deployer duty on specified bodies and not a
+GPAI obligation. However, if a regulatory
 submission agent influences the content of a safety section in a way that
 affects whether a drug's risk profile is accurately represented to a regulatory
 authority, the implied public safety implications are substantial even if the
 direct effect on individuals is indirect.
 
 **Clinical trial monitoring agents** and **quality management agents** are
-typically limited-risk absent specific features that bring them into Annex III
-scope (such as direct patient data processing for individual clinical
+typically outside Annex III — reached, if at all, only by the Article 50
+transparency obligations — absent specific features that bring them into
+Annex III scope (such as direct patient data processing for individual clinical
 decisions). The GPAI overlay in
 [agent/agent-regulatory-classification.md](../agent/agent-regulatory-classification.md)
 applies: document the GPAI model, confirm the provider's compliance
@@ -65,7 +95,21 @@ systemic risk.
 where their output informs dispensing decisions affecting individual patients
 require careful Annex III analysis. An agent product whose output determines
 whether a drug is dispensed to a patient or triggers a clinical warning is
-potentially Annex III §5(a) high-risk. Classify these products based on the
+**not** Annex III §5(a) high-risk: §5(a) is confined to public authorities, or
+those acting on their behalf, evaluating eligibility for essential public
+assistance benefits and services, and a dispensing or interaction-warning agent
+in a clinical or pharmacy setting is not doing that. [Classification withdrawn
+2026-09-06: this sentence previously read potentially Annex III §5(a)
+high-risk, on the same misreading of §5(a) as a health-data point.] The route
+to assess instead is Article 6(1)/Annex I, under which the agent is high-risk
+where it is a safety component of, or is itself, a product covered by
+Regulation (EU) 2017/745 (medical devices) or Regulation (EU) 2017/746 (IVDs)
+— both EU AI Act Annex I Section A entries — and that product requires third-party
+conformity assessment; clinical decision support software is frequently a
+medical device in its own right under MDR Rule 11. Where it is not a device
+under either Regulation, no Annex reaches it and no high-risk classification is
+asserted here, which is a Stage 1 question for counsel rather than a clearance.
+Classify these products based on the
 actual decision structure — who acts on the output, and what are the
 consequences — rather than the nominal description of the agent as "advisory."
 
@@ -104,20 +148,32 @@ inspector what version of the agent product was in use during any specified
 period.
 
 The conformity assessment path for most pharmaceutical high-risk agent products
-is internal control with EU AI Office database registration (Annex VI).
-Third-party conformity assessment (Annex VII) is not required for most Annex
-III categories applicable to pharma. Organizations that voluntarily elect
+is internal control (Annex VI), followed by registration of the provider and
+the system under Article 49(1) in the EU database for high-risk AI systems
+that the Commission maintains under Article 71 — a register the AI Office
+does not hold. Article 49(1) excepts Annex III point 2 (critical
+infrastructure) systems from that registration.
+Third-party conformity assessment (Annex VII) is not required for most
+Annex III categories applicable to pharma. Organizations that voluntarily elect
 third-party review to support regulatory submissions in multiple jurisdictions
 should document the rationale at Stage 1.
 
 ### Automated Decision-Making Governance
 
-The GDPR Article 22 prohibition on solely automated decisions based on special
-category data applies to pharmaceutical agent products that process individual
-patient health or genetic data and produce decisions with significant
-individual effects. In the pharmaceutical context, this primarily concerns
-clinical trial participant monitoring agents and patient registry agents that
-process identifiable patient data.
+[citation withdrawn 2026-09-05: this paragraph previously stated the
+governing GDPR restriction on solely automated decisions based on special
+category data as an unqualified prohibition. The restriction is conditional,
+not absolute — it carries consent and Member-State-law gateways that this
+line omitted entirely, and the correct qualified form has not been signed
+off. See `inputs/20260905-arnaud/prep/domain-files/domain_files_packet.md`.]
+The automated-decision-making governance set out in this section — the
+Stage 1 classification, human-review-path and permission-model requirements
+described in the paragraphs below, and not any GDPR Article 22 or Article 9
+restriction, which this file no longer states — applies to pharmaceutical agent
+products that process individual patient health or genetic data and produce
+decisions with significant individual effects. In the pharmaceutical context, this
+primarily concerns clinical trial participant monitoring agents and patient
+registry agents that process identifiable patient data.
 
 Pharmacovigilance decisions that affect regulatory filings are not typically
 GDPR Article 22 matters — the decision subject is the regulatory submission,
@@ -201,15 +257,51 @@ pharmacovigilance agent products must include a plan for how the decision trail
 will remain accessible to regulatory authorities after the agent product is
 retired, in a format that inspectors can navigate.
 
-For agent products in EU AI Act high-risk scope, **EU AI Act Article 73**
-serious incident reporting applies. In the pharmaceutical context, a serious
-incident is most likely to arise from a pharmacovigilance agent product that
-fails to identify a safety signal, resulting in delayed regulatory action on a
-genuine safety issue. The incident classification framework must include an
-assessment of whether a quality incident in a pharmacovigilance agent product
-meets the Article 73 serious incident threshold — harm to health and safety —
-and the escalation path must include the qualified pharmacovigilance
-professional who can make that determination.
+For agent products in EU AI Act high-risk scope, **EU AI Act Article 73(1)**
+binds the *provider* of a high-risk AI system, who must report any serious
+incident to the market surveillance authorities of the Member States where the
+incident occurred. It does not bind "operators" as a
+class — Article 3(8) defines an operator as a provider, product manufacturer,
+deployer, authorised representative, importer or distributor. An organisation
+that uses a third party's agent product is a *deployer*, and its own duty is
+**Article 26(5)**: on identifying a serious incident it must immediately inform
+first the provider, and then the importer or distributor and the relevant
+market surveillance authorities, with Article 73 applying *mutatis mutandis*
+only where the provider cannot be reached.
+
+Each Article 73 deadline is stated here with the duty it governs. The general
+report is due immediately after the provider has established a causal link
+between the AI system and the incident or the reasonable likelihood of such a
+link, and **not later than 15 days** after the provider or, where applicable,
+the deployer becomes aware of it (Art. 73(2)). Where a person has died it is
+due immediately on establishing or suspecting a causal relationship, and **not
+later than 10 days** after awareness (Art. 73(4)). For a widespread
+infringement, or a serious and irreversible disruption of the management or
+operation of critical infrastructure within Article 3(49)(b), it is due
+immediately and **not later than two days** after awareness (Art. 73(3)). An
+infringement of obligations under Union law intended to protect fundamental
+rights is Article 3(49)(c) and carries no shorter clock — it runs on the
+general 15-day period of Article 73(2). Article 73 prescribes no report content
+in any of its eleven paragraphs; the Commission guidance mandated by Article
+73(7) is the forthcoming source for that.
+
+Article 3(49) defines a serious incident as an incident or malfunctioning of an
+AI system that directly or indirectly leads to any of four outcomes: the death
+of a person, or serious harm to a person's health; a serious and irreversible
+disruption of the management or operation of critical infrastructure; the
+infringement of obligations under Union law intended to protect fundamental
+rights; or serious harm to property or the environment.
+
+In the pharmaceutical context, a serious incident is most likely to arise from
+a pharmacovigilance agent product that fails to identify a safety signal,
+resulting in delayed regulatory action on a genuine safety issue — an Article
+3(49)(a) case where it leads to death or serious harm to a person's health, and
+so subject to the 10-day period of Article 73(4) where a person has died and
+the 15-day period of Article 73(2) otherwise. The incident classification
+framework must include an assessment of whether a quality incident in a
+pharmacovigilance agent product meets the Article 73 serious incident
+threshold, and the escalation path must include the qualified pharmacovigilance
+professional who can make that determination inside the applicable period.
 
 For agent products in scope of **EU GMP or GDP requirements**, regulatory
 notifications arising from agent product failures in manufacturing or

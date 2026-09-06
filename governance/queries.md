@@ -222,7 +222,7 @@ These queries support governance work in Stage 4 (Release) and Stage 5 (Operate)
 
 **Typical requester.** Product owner; governance oversight function; risk officer.
 
-**Frequency.** Weekly; triggered on approaching waiver expiry dates (30 days, 14 days, 7 days, 1 day before expiry).
+**Frequency.** Weekly; triggered on approaching waiver expiry dates (a policy-set warning ladder of 30 days, 14 days, 7 days, 1 day before expiry).
 
 **Governance use.** Active waivers represent governance conditions that are known to be unsatisfied. GQ-11 maintains visibility of the full waiver inventory and its expiry timeline, ensuring that waivers are not allowed to lapse without resolution or formal renewal. An expired waiver that has not been resolved or renewed is a governance failure. Per [governance observability](observability.md), a growing waiver count triggers a portfolio governance review anomaly.
 
@@ -240,7 +240,7 @@ These queries support governance work in Stage 4 (Release) and Stage 5 (Operate)
 
 **Frequency.** Weekly.
 
-**Governance use.** HITL routing accuracy below 90% triggers a recalibration requirement for the HITL Routing Intelligence Agent per [governance observability](observability.md). GQ-12 is the standard monitoring query that detects degradation before it reaches the threshold. A declining trend that has not yet breached the threshold is an early warning; the product owner uses it to schedule routing logic review before the threshold is crossed.
+**Governance use.** HITL routing accuracy below a policy-set 90% triggers a recalibration requirement for the HITL Routing Intelligence Agent per [governance observability](observability.md). GQ-12 is the standard monitoring query that detects degradation before it reaches the threshold. A declining trend that has not yet breached the threshold is an early warning; the product owner uses it to schedule routing logic review before the threshold is crossed.
 
 ---
 
@@ -250,7 +250,7 @@ These queries support governance work in Stage 4 (Release) and Stage 5 (Operate)
 
 **Artifact types queried.** HITL review records; override decision records; use-case coverage map; behavioral contract records.
 
-**Output format.** Tabular result ranked by override rate, with one row per use-case category that has at least 20 HITL reviews in the measurement period: use-case category, total reviews, override count, override rate, override rate trend (vs. prior 30-day period), primary override reasons (the most common reviewer rationale for overriding the agent's response in this category), and behavioral specification section most frequently associated with the overrides. Parameterizable by agent system, measurement period, and minimum review volume threshold.
+**Output format.** Tabular result ranked by override rate, with one row per use-case category that has at least a policy-set 20 HITL reviews in the measurement period: use-case category, total reviews, override count, override rate, override rate trend (vs. prior 30-day period), primary override reasons (the most common reviewer rationale for overriding the agent's response in this category), and behavioral specification section most frequently associated with the overrides. Parameterizable by agent system, measurement period, and minimum review volume threshold.
 
 **Typical requester.** HITL Routing Intelligence Agent; product owner; specification analyst.
 
@@ -266,7 +266,7 @@ These queries support governance work in Stage 4 (Release) and Stage 5 (Operate)
 
 **Artifact types queried.** Behavioral drift monitoring records; drift classification records; incident records; investigation initiation records; CSH history records.
 
-**Output format.** Identifier list of drift alerts that have been generated but do not have a corresponding investigation record within the expected investigation window (24 hours for out-of-spec drift; 48 hours for within-spec drift flagged for maintenance review). Supplementary fields: alert identifier, agent system identifier, alert generation timestamp, alert type (within-spec or out-of-spec), hours since alert with no investigation record, and the behavioral metric that triggered the alert.
+**Output format.** Identifier list of drift alerts that have been generated but do not have a corresponding investigation record within the expected policy-set investigation window (a policy-set 24 hours for out-of-spec drift; a policy-set 48 hours for within-spec drift flagged for maintenance review). Supplementary fields: alert identifier, agent system identifier, alert generation timestamp, alert type (within-spec or out-of-spec), hours since alert with no investigation record, and the behavioral metric that triggered the alert.
 
 **Typical requester.** Behavioral Drift Monitor Agent; product owner; governance oversight function.
 
@@ -286,7 +286,7 @@ These queries support governance work in Stage 4 (Release) and Stage 5 (Operate)
 
 **Typical requester.** Behavioral Drift Monitor Agent; product owner.
 
-**Frequency.** Weekly for standard deployments; daily for high-risk deployments or deployments within 90 days of release.
+**Frequency.** Weekly for standard deployments; daily for high-risk deployments or deployments within a policy-set 90 days of release.
 
 **Governance use.** The behavioral fingerprint supplements the CSH for drift localization: the CSH tells you which component changed structurally; the fingerprint delta tells you which behavioral dimensions changed observably. A product where the CSH is stable but the fingerprint delta is growing is exhibiting behavioral drift without a structural component change — a signal that memory accumulation or input distribution shift is the driver. GQ-15 provides the behavioral evidence that complements GQ-14's alert-level view.
 
@@ -310,13 +310,13 @@ These queries support governance work in Stage 6 (Maintain) and Stage 7 (Retire)
 
 **Frequency.** Weekly; per-event (triggered on each new model update change record from T08).
 
-**Governance use.** A model update without a completed impact assessment means an agent system is potentially operating on a changed behavioral substrate without governance visibility into the change. GQ-16 surfaces the pending assessment backlog so that the Foundation Model Impact Prediction Agent and product owner can prioritize assessment work. A pending assessment older than 7 days for a Tier 3 or Tier 4 agent is a governance SLA breach.
+**Governance use.** A model update without a completed impact assessment means an agent system is potentially operating on a changed behavioral substrate without governance visibility into the change. GQ-16 surfaces the pending assessment backlog so that the Foundation Model Impact Prediction Agent and product owner can prioritize assessment work. A pending assessment older than a policy-set 7 days for a Tier 3 or Tier 4 agent is a governance SLA breach.
 
 ---
 
 ### GQ-17 — Knowledge Base Sources Not Recently Reviewed
 
-**Question.** Which knowledge base sources have not been reviewed in the last 90 days?
+**Question.** Which knowledge base sources have not been reviewed in the last 90 days — a policy-set review window, chosen rather than measured?
 
 **Artifact types queried.** Knowledge base source registry records; staleness monitoring records from Knowledge Staleness Sentinel; review completion records; source change records from T08.
 
@@ -326,7 +326,7 @@ These queries support governance work in Stage 6 (Maintain) and Stage 7 (Retire)
 
 **Frequency.** Weekly; monthly for full portfolio view.
 
-**Governance use.** A knowledge base source that has not been reviewed is a behavioral staleness risk: the agent's responses depend on knowledge that may no longer be current. For high-change-rate domains, 90 days without review is the staleness threshold; for medium-change-rate domains, 180 days; for low-change-rate domains, 365 days. GQ-17 produces the staleness list prioritized by domain change rate and behavioral specification dependency, so that the maintenance team addresses the highest-risk staleness items first.
+**Governance use.** A knowledge base source that has not been reviewed is a behavioral staleness risk: the agent's responses depend on knowledge that may no longer be current. For high-change-rate domains, 90 days without review is the staleness threshold; for medium-change-rate domains, 180 days; for low-change-rate domains, 365 days — three policy-set defaults, chosen rather than measured. (These differ from the 30/180-day figures in `observability.md` and `agent/agent-maintenance.md`; the divergence is a live inconsistency, not a scope distinction.) GQ-17 produces the staleness list prioritized by domain change rate and behavioral specification dependency, so that the maintenance team addresses the highest-risk staleness items first.
 
 ---
 
@@ -396,7 +396,7 @@ These queries operate across the full agent product portfolio rather than a sing
 
 **Frequency.** Weekly.
 
-**Governance use.** Portfolio boundary proximity is the operational risk map for the governance function. An agent system operating at 5% of its specification boundary without a drift alert is closer to an incident than one with an active alert that has just crossed a soft boundary. GQ-21 surfaces the products that require the most proactive attention, prioritized by their actual behavioral distance from specification limits rather than by the presence or absence of formal alerts.
+**Governance use.** Portfolio boundary proximity is the operational risk map for the governance function. An agent system operating at a policy-set 5% of its specification boundary without a drift alert is closer to an incident than one with an active alert that has just crossed a soft boundary. GQ-21 surfaces the products that require the most proactive attention, prioritized by their actual behavioral distance from specification limits rather than by the presence or absence of formal alerts.
 
 ---
 
@@ -412,7 +412,7 @@ These queries operate across the full agent product portfolio rather than a sing
 
 **Frequency.** Per-event (triggered on each new foundation model update change record); on-demand (when evaluating a planned model update before execution).
 
-**Governance use.** GQ-22 answers the portfolio risk question that no single-system query can: if this model changes, how much of our portfolio is affected and how severely? The answer determines whether the model update can be accepted on a per-system review basis or whether it requires a coordinated portfolio-wide governance response. A model update affecting more than 50% of high-risk classified products is a portfolio-level governance event requiring the accountable human's approval before any system accepts the update.
+**Governance use.** GQ-22 answers the portfolio risk question that no single-system query can: if this model changes, how much of our portfolio is affected and how severely? The answer determines whether the model update can be accepted on a per-system review basis or whether it requires a coordinated portfolio-wide governance response. A model update affecting more than a policy-set 50% of high-risk classified products is a portfolio-level governance event requiring the accountable human's approval before any system accepts the update.
 
 ---
 
@@ -454,13 +454,13 @@ These queries operate across the full agent product portfolio rather than a sing
 
 **Artifact types queried.** Governance metrics records (all metrics defined in [governance observability](observability.md)); gate decision latency records; HITL queue health records; evaluation run records; tool invocation audit records.
 
-**Output format.** Summary record identifying active governance bottlenecks, organized by APLC stage: for each stage, the current metrics vs. SLA targets; metrics deviating more than 20% from target (classified as bottleneck indicators); the specific governance step where the bottleneck is located (e.g., legal review in Stage 1, human evaluation in Stage 3, conformity documentation in Stage 4, reviewer capacity in Stage 5); impact assessment (which products or governance outcomes are currently blocked or delayed by this bottleneck); suggested remediation approaches (increase capacity, revise process, add tooling, or escalate to governance oversight). An aggregate bottleneck score indicating the overall health of the governance pipeline.
+**Output format.** Summary record identifying active governance bottlenecks, organized by APLC stage: for each stage, the current metrics vs. SLA targets; metrics deviating more than a policy-set 20% from target (classified as bottleneck indicators); the specific governance step where the bottleneck is located (e.g., legal review in Stage 1, human evaluation in Stage 3, conformity documentation in Stage 4, reviewer capacity in Stage 5); impact assessment (which products or governance outcomes are currently blocked or delayed by this bottleneck); suggested remediation approaches (increase capacity, revise process, add tooling, or escalate to governance oversight). An aggregate bottleneck score indicating the overall health of the governance pipeline.
 
 **Typical requester.** Governance oversight function; risk officer; product owner.
 
 **Frequency.** Weekly; per-event (triggered when any governance anomaly is detected per [governance observability](observability.md)).
 
-**Governance use.** GQ-25 is the meta-query: it uses the governance observability metrics to diagnose the governance process itself. A bottleneck that appears in GQ-25 is a structural issue, not an individual product issue — it requires process intervention, not product-level remediation. The governance oversight function uses GQ-25 output as the primary input to governance process improvement decisions. A bottleneck that persists in GQ-25 across three consecutive weekly queries without a remediation action in progress is a governance process failure requiring escalation to the accountable human for the governance program.
+**Governance use.** GQ-25 is the meta-query: it uses the governance observability metrics to diagnose the governance process itself. A bottleneck that appears in GQ-25 is a structural issue, not an individual product issue — it requires process intervention, not product-level remediation. The governance oversight function uses GQ-25 output as the primary input to governance process improvement decisions. A bottleneck that persists in GQ-25 across a policy-set three consecutive weekly queries without a remediation action in progress is a governance process failure requiring escalation to the accountable human for the governance program.
 
 ---
 
