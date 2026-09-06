@@ -50,9 +50,9 @@ Every waiver must include all of the following. A waiver missing any element is 
 
 ## Section 3: Maximum Waiver Durations by Condition Type
 
-The maximum duration for a waiver is set by the condition type. These are ceilings, not targets — the remediation plan should aim for the shortest viable period, not the maximum permitted period.
+The maximum duration for a waiver is set by the condition type, and every duration in the table below is a policy-set default chosen by the authors rather than calibrated against observed remediation times. These are ceilings, not targets — the remediation plan should aim for the shortest viable period, not the maximum permitted period.
 
-| Condition Type | Maximum Duration |
+| Condition Type | Maximum Duration (policy-set) |
 | --- | --- |
 | Red-team coverage gap (non-Critical finding) | 30 days |
 | Behavioral evaluation coverage shortfall | 45 days |
@@ -63,7 +63,7 @@ The maximum duration for a waiver is set by the condition type. These are ceilin
 
 **Critical red-team findings: no waiver permitted.** A Critical finding must be remediated and re-tested before the gate can pass. There is no compensating control that provides equivalent mitigation for an unresolved Critical adversarial finding against a deployed agent product. If the finding cannot be remediated, the product does not pass the Behavioral Release Gate.
 
-**Safety and alignment conditions: maximum 7 days.** Waivers on conditions that directly govern the agent's safety behavior, alignment constraints, or hard boundary enforcement are granted for a maximum of 7 days. Both product owner and legal/risk sign-off are required. A safety and alignment condition waiver at 7 days that has not been remediated does not renew — it expires and the gate condition reverts.
+**Safety and alignment conditions: a policy-set maximum of 7 days.** Waivers on conditions that directly govern the agent's safety behavior, alignment constraints, or hard boundary enforcement are granted for a maximum of 7 days. Both product owner and legal/risk sign-off are required. A safety and alignment condition waiver at 7 days that has not been remediated does not renew — it expires and the gate condition reverts.
 
 ---
 
@@ -75,11 +75,11 @@ A waiver moves through defined states from issuance to closure. The governance g
 
 **Active.** The waiver is within its validity period. The gate condition state remains waived. Governance monitoring tracks the remediation plan's progress and the compensating control's continued operational status. The waiver's expiry date is visible in the product's governance graph node alongside all other active waivers.
 
-**Expiring.** The waiver is within 7 days of its expiry date without remediation confirmed. The grantor and product owner are notified. Three outcomes are possible: remediation completes before expiry (the condition is satisfied, the waiver closes as expired-remediated, the gate condition state updates to pass), the waiver is renewed (see renewal constraints below), or the expiry date passes without either.
+**Expiring.** The waiver is within a policy-set 7 days of its expiry date without remediation confirmed. The grantor and product owner are notified. Three outcomes are possible: remediation completes before expiry (the condition is satisfied, the waiver closes as expired-remediated, the gate condition state updates to pass), the waiver is renewed (see renewal constraints below), or the expiry date passes without either.
 
 **Expired-remediated.** The underlying condition was satisfied before the expiry date. The waiver closes. The gate condition state updates to reflect the satisfied condition. The waiver record is retained in the governance archive for audit purposes.
 
-**Expired-lapsed.** The expiry date passed without the condition being satisfied and without a valid renewal. The waiver is no longer valid. The gate condition reverts to its pre-waiver state — typically a gate failure state. Any agent product currently deployed in production under this waiver must have its governance status reviewed immediately. An expired-lapsed waiver on a deployed agent product is a governance incident: the product is operating with an unmet gate condition that is no longer covered by any compensating control record or remediation accountability. The product owner and accountable human must be notified immediately and a remediation decision made within 24 hours.
+**Expired-lapsed.** The expiry date passed without the condition being satisfied and without a valid renewal. The waiver is no longer valid. The gate condition reverts to its pre-waiver state — typically a gate failure state. Any agent product currently deployed in production under this waiver must have its governance status reviewed immediately. An expired-lapsed waiver on a deployed agent product is a governance incident: the product is operating with an unmet gate condition that is no longer covered by any compensating control record or remediation accountability. The product owner and accountable human must be notified immediately and a remediation decision made within a policy-set 24 hours.
 
 **Renewed.** The waiver has been extended with an updated rationale, an updated expiry date, and a re-confirmed compensating control. A renewal requires the same authorization as original issuance — it is not an administrative extension. A maximum of one renewal is permitted per waiver. A second renewal request requires escalation to the accountable human and a documented review of why remediation has not been completed and whether the condition's specification or the organization's capability to meet it requires revision. A second renewal is not automatically granted — it is an accountability conversation, not a form submission.
 
@@ -89,7 +89,7 @@ A waiver moves through defined states from issuance to closure. The governance g
 
 Emergency waivers address situations where a production safety fix or critical behavioral correction must be deployed faster than the full gate process permits. They are not a mechanism for accelerating planned releases. The emergency criterion is narrow: an active production risk that cannot wait for normal gate processing.
 
-**Maximum duration: 14 days.** An emergency waiver that reaches 14 days without either full gate remediation or conversion to a standard waiver expires on the same terms as a standard expired-lapsed waiver.
+**Maximum duration: a policy-set 14 days.** An emergency waiver that reaches 14 days without either full gate remediation or conversion to a standard waiver expires on the same terms as a standard expired-lapsed waiver.
 
 **Authorization requirements.** Emergency waivers require accountable human authorization — not product owner authorization alone. The accountable human is the named individual with documented scope of accountability for the agent product. Product owner sign-off is necessary but not sufficient. Legal/risk must be notified in real time, not after the fact.
 
@@ -107,7 +107,7 @@ Individual waivers are point decisions. Portfolio-level waiver tracking makes th
 
 **Governance graph visibility.** All active waivers for an agent product are visible in its governance graph node. The governance graph represents the product's current gate condition state including which conditions are waived, which waivers are in the expiring state, and which waivers are approaching their maximum permitted duration. A product's aggregate waiver state is not buried in individual waiver records — it is a visible governance signal.
 
-**Elevated governance debt threshold.** A product with more than 3 active waivers simultaneously is in an elevated governance debt state. This state requires a product owner review: what is the aggregate risk profile of the active waivers taken together, are the compensating controls collectively providing adequate mitigation, and is the remediation plan portfolio on track? Elevated governance debt state is not a block on operations — it is a mandatory accountability review. If the review concludes that the aggregate debt is not manageable, the product owner must either accelerate remediation or make an explicit decision to scale back deployment scope until debt is reduced.
+**Elevated governance debt threshold.** A product with more than a policy-set 3 active waivers simultaneously — a count chosen by the authors, not observed — is in an elevated governance debt state. This state requires a product owner review: what is the aggregate risk profile of the active waivers taken together, are the compensating controls collectively providing adequate mitigation, and is the remediation plan portfolio on track? Elevated governance debt state is not a block on operations — it is a mandatory accountability review. If the review concludes that the aggregate debt is not manageable, the product owner must either accelerate remediation or make an explicit decision to scale back deployment scope until debt is reduced.
 
 **Repeated waiver pattern.** If the same condition is waived more than twice across the product's lifecycle, this is a governance pattern signal. Two outcomes are plausible: the condition's specification is miscalibrated for this product type and requires review, or the organization's capability to satisfy the condition is structurally insufficient and requires investment. In either case, a third waiver on the same condition should not be issued without first conducting a condition review — not just a waiver review. The question is not "should we grant another waiver" but "why has this condition been unachievable twice, and what structural change addresses that?"
 
@@ -146,11 +146,11 @@ Decisions that may not be appealed: any decision where a Critical red-team findi
 
 ### Appeal Process
 
-**Step 1 — Appeal filing.** The appealing party files a structured appeal record in AGKB within 5 business days of the disputed decision. The appeal record must contain: the specific decision being appealed (gate type, product version, decision date); the specific gate condition or assessment standard the appealing party believes was incorrectly applied; the evidence supporting the appeal (what evidence did the assessor overlook or misapply?); the requested outcome (clear the gate, reclassify the finding, grant the waiver).
+**Step 1 — Appeal filing.** The appealing party files a structured appeal record in AGKB within a policy-set 5 business days of the disputed decision. The appeal record must contain: the specific decision being appealed (gate type, product version, decision date); the specific gate condition or assessment standard the appealing party believes was incorrectly applied; the evidence supporting the appeal (what evidence did the assessor overlook or misapply?); the requested outcome (clear the gate, reclassify the finding, grant the waiver).
 
 **Step 2 — Appeal review panel.** The appeal is reviewed by a panel of three: (a) the accountable human for the product (or a delegate with no involvement in the original decision); (b) a second accountability role holder not involved in the original decision; (c) for disputes involving technical assessment (red-team findings, evaluation coverage claims), a qualified domain expert external to the product team. The panel must not include any member who participated in the original disputed decision.
 
-**Step 3 — Panel decision.** The panel reviews the evidence and issues a decision within 10 business days of the appeal filing. The decision is one of: uphold original decision (appeal denied, original decision stands); reverse decision (appeal granted, gate is cleared, finding is reclassified, or waiver is granted); remand for reassessment (the panel identifies a procedural error and directs the original assessor to reassess with corrected procedure).
+**Step 3 — Panel decision.** The panel reviews the evidence and issues a decision within a policy-set 10 business days of the appeal filing. The decision is one of: uphold original decision (appeal denied, original decision stands); reverse decision (appeal granted, gate is cleared, finding is reclassified, or waiver is granted); remand for reassessment (the panel identifies a procedural error and directs the original assessor to reassess with corrected procedure).
 
 **Step 4 — Record.** The appeal record, the panel's decision, and the reasoning are filed in AGKB alongside the original decision record. Both records are returned together in any future retrieval of the original decision identifier.
 

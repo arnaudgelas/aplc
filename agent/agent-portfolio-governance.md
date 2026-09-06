@@ -75,7 +75,7 @@ Agent systems where the impact assessment indicates Critical or High severity be
 Systems in Evaluation Hold continue operating on their current model version. If the current model version is being withdrawn by the provider, an emergency recalibration process is initiated per [[agent-maintenance.md]].
 
 **Step 6 — Portfolio Release Decision.**
-Model update deployment is coordinated across the portfolio. Staggered release by risk tier: Tier 4 and lower-risk systems first (smallest blast radius if an undetected behavioral issue remains), then Tier 3, then Tier 2, then Tier 1. After each tier, monitor behavioral metrics for 48 hours before proceeding to the next tier. Monitoring uses the behavioral fingerprint comparison against the pre-update baseline; anomalies halt the staggered release.
+Model update deployment is coordinated across the portfolio. Staggered release by risk tier: Tier 4 and lower-risk systems first (smallest blast radius if an undetected behavioral issue remains), then Tier 3, then Tier 2, then Tier 1. After each tier, monitor behavioral metrics for a policy-set 48 hours before proceeding to the next tier. Monitoring uses the behavioral fingerprint comparison against the pre-update baseline; anomalies halt the staggered release.
 
 ### Epidemic Metrics
 
@@ -85,9 +85,9 @@ Portfolio-level tracking for each index case:
 | --- | --- | --- |
 | Affected system count | Number of agent systems using the updated model | Determined at Step 2 |
 | Impact severity distribution | Count of systems at Critical / High / Medium / Low impact assessment | Determined at Step 3–4 |
-| Time from index case to full portfolio assessment | Calendar days from detection to last system assessed | Target: 14 days for non-emergency updates |
+| Time from index case to full portfolio assessment | Calendar days from detection to last system assessed | Target: 14 days for non-emergency updates (policy-set) |
 | Quarantine rate | Percentage of exposed systems placed in Evaluation Hold | Reported per index case |
-| Time from quarantine to clearance | Calendar days a system spends in Evaluation Hold | Target: 30 days maximum |
+| Time from quarantine to clearance | Calendar days a system spends in Evaluation Hold | Target: 30 days maximum (policy-set) |
 
 Epidemic metrics are reported to the portfolio governance cadence review (see Portfolio Governance Cadence below).
 
@@ -217,13 +217,13 @@ Required FTE estimation: use the minimum FTE estimates from `aplc-guide.md` Gove
 
 ### Capacity State Thresholds and Responses
 
-**Normal (ratio ≤ 0.80).** Governance team is operating within capacity. Standard governance processes apply without modification.
+**Normal (ratio ≤ 0.80, a policy-set band).** Governance team is operating within capacity. Standard governance processes apply without modification.
 
-**Elevated (0.80 < ratio ≤ 1.00).** Governance team is near capacity. Required actions: (a) Portfolio Steward is notified with the current ratio and a breakdown by product and function; (b) new product conceptions require explicit Portfolio Steward approval with an assessment of which existing governance activities will be de-prioritized to accommodate the new product; (c) HITL sample rates for lowest-risk products may be temporarily reduced to the minimum viable level.
+**Elevated (0.80 < ratio ≤ 1.00, policy-set).** Governance team is near capacity. Required actions: (a) Portfolio Steward is notified with the current ratio and a breakdown by product and function; (b) new product conceptions require explicit Portfolio Steward approval with an assessment of which existing governance activities will be de-prioritized to accommodate the new product; (c) HITL sample rates for lowest-risk products may be temporarily reduced to the minimum viable level.
 
-**Overload (ratio > 1.00).** Governance team is over capacity. Immediate required actions within 5 business days: (a) halt new product conceptions until the ratio returns to Normal; (b) reduce evaluation cadence for lowest-risk products to Stage 6 minimum; (c) escalate to the organizational leadership level that commissioned the APLC adoption — a formal resourcing request with timeline; (d) document which governance activities are being deferred and the corresponding risk acceptance.
+**Overload (ratio > 1.00, policy-set).** Governance team is over capacity. Immediate required actions within a policy-set 5 business days: (a) halt new product conceptions until the ratio returns to Normal; (b) reduce evaluation cadence for lowest-risk products to Stage 6 minimum; (c) escalate to the organizational leadership level that commissioned the APLC adoption — a formal resourcing request with timeline; (d) document which governance activities are being deferred and the corresponding risk acceptance.
 
-An organization in Overload state for more than 60 consecutive days without a documented resourcing response or scope reduction is in governance capacity failure. This finding must be disclosed to the Regulatory Owner and included in the next regulatory examination or audit response.
+An organization in Overload state for more than a policy-set 60 consecutive days without a documented resourcing response or scope reduction is in governance capacity failure. This finding must be disclosed to the Regulatory Owner and included in the next regulatory examination or audit response.
 
 ### Portfolio Prioritization Under Capacity Constraint
 

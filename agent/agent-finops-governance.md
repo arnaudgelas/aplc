@@ -36,7 +36,7 @@ The Technical Owner is the primary owner of the FinOps governance mechanism — 
 
 ## Cost Attribution Model
 
-Agent system costs map to the five components of the Composite Agent State and to the APLC lifecycle stages at which they are incurred. Cost attribution must be defined before the agent product enters Stage 3. Retroactive attribution is unreliable; the cost envelope cannot be validated at the Behavioral Release Gate if cost attribution was not instrumented during Stage 3 development and evaluation.
+Agent system costs map to the six components of the Composite Agent State and to the APLC lifecycle stages at which they are incurred. Cost attribution must be defined before the agent product enters Stage 3. Retroactive attribution is unreliable; the cost envelope cannot be validated at the Behavioral Release Gate if cost attribution was not instrumented during Stage 3 development and evaluation.
 
 ### Cost Components
 
@@ -54,7 +54,7 @@ Agent system costs map to the five components of the Composite Agent State and t
 
 Attribution: use the tool manifest version record in the CSH to map each tool invocation to its declared cost profile. Each tool in the tool manifest carries a cost profile defined at Stage 2: `{estimated_cost_per_call, cost_floor, cost_ceiling, billing_unit}`. Cost attributed to each tool is logged per invocation using the same attribution tagging dimensions as other cost components (product identifier, APLC stage, cost component type, autonomy tier, CSH, business purpose).
 
-Tool cost anomaly detection: a tool invocation whose actual cost exceeds its Stage 2 cost profile ceiling by more than 20% generates a cost anomaly alert to the Technical Owner. A pattern of tool cost ceiling exceedances concentrated on a specific tool version may indicate: (a) the tool provider has changed its pricing or rate limits without notification; (b) the agent is calling the tool with unusually large or complex inputs (a behavioral signal); (c) the Stage 2 cost profile was incorrect and needs revision. All three root causes require investigation; only root cause (c) is resolved by updating the cost profile — root causes (a) and (b) require governance responses beyond cost model revision.
+Tool cost anomaly detection: a tool invocation whose actual cost exceeds its Stage 2 cost profile ceiling by more than a policy-set 20% generates a cost anomaly alert to the Technical Owner. A pattern of tool cost ceiling exceedances concentrated on a specific tool version may indicate: (a) the tool provider has changed its pricing or rate limits without notification; (b) the agent is calling the tool with unusually large or complex inputs (a behavioral signal); (c) the Stage 2 cost profile was incorrect and needs revision. All three root causes require investigation; only root cause (c) is resolved by updating the cost profile — root causes (a) and (b) require governance responses beyond cost model revision.
 
 ### Cost Attribution Tagging
 
@@ -166,7 +166,7 @@ Stage 3 operates the APLC inner loop (see [[aplc-stage3-inner-loop.md]]) under a
 
 **Cost efficiency as an evaluation dimension:** Alongside the four behavioral evaluation layers in [[agent-behavioral-evaluation.md]], Stage 3 must confirm that the cost-per-interaction projection from Stage 2 is achievable with the current composite state. If the actual cost per interaction in evaluation runs consistently exceeds the specification-predicted value, the evaluation has identified an economic specification gap that must be resolved before the Behavioral Release Gate.
 
-**Behavioral Release Gate FinOps condition:** cost-per-interaction for evaluation runs within cost envelope tolerance (≤ 1.2× specification-predicted cost per interaction); cost regression testing passed (no sprint produced a cost increase not justified by a behavioral quality improvement); evaluation cost budget utilisation documented.
+**Behavioral Release Gate FinOps condition:** cost-per-interaction for evaluation runs within cost envelope tolerance (a policy-set ≤ 1.2× specification-predicted cost per interaction); cost regression testing passed (no sprint produced a cost increase not justified by a behavioral quality improvement); evaluation cost budget utilisation documented.
 
 ---
 
@@ -192,7 +192,7 @@ Cost monitoring in Stage 5 is a behavioral observability domain, not only a fina
 - HITL cost ratio vs. specification target
 - Token efficiency ratio vs. Stage 4 baseline
 
-**Cost spike as a behavioral drift trigger:** When the FinOps drift indicator exceeds its alert threshold, it activates the same investigation protocol as a behavioral drift event. The Technical Owner is notified within 1 hour. The investigation follows the same root cause analysis process as behavioral incidents: retrieve the CSH at the time of the spike, compare to the release-baseline CSH, identify which component changed. Cost spikes without a corresponding CSH change are behavioral anomalies — the agent is doing something different with the same configuration.
+**Cost spike as a behavioral drift trigger:** When the FinOps drift indicator exceeds its alert threshold, it activates the same investigation protocol as a behavioral drift event. The Technical Owner is notified within a policy-set 1 hour. The investigation follows the same root cause analysis process as behavioral incidents: retrieve the CSH at the time of the spike, compare to the release-baseline CSH, identify which component changed. Cost spikes without a corresponding CSH change are behavioral anomalies — the agent is doing something different with the same configuration.
 
 **Cost anomaly as an incident signal:** A cost anomaly that cannot be explained by interaction volume change, planned composite state change, or input distribution shift is classified as a behavioral incident until investigation determines otherwise. It is not deferred to the next operations review cycle.
 

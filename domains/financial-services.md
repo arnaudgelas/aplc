@@ -27,40 +27,62 @@ design and the Stage 1 Conception Gate.
 Common agent product types in financial services and their EU AI Act Annex III
 classifications:
 
-**Claims processing agents and credit decisioning agents** are high-risk under
-Annex III §5(b): AI systems intended for evaluating creditworthiness,
-establishing credit scores, or assessing risk and pricing in insurance. These
-agent products require full high-risk conformity documentation and EU database
-registration before market placement.
+**Credit decisioning agents** are high-risk under Annex III §5(b) — "AI systems
+intended to be used to evaluate the creditworthiness of natural persons or
+establish their credit score, with the exception of AI systems used for the
+purpose of detecting financial fraud". [Point corrected 2026-09-05: this
+paragraph previously placed insurance risk assessment and pricing, and claims
+processing, inside §5(b). Insurance risk assessment and pricing is §5(c) and is
+limited on its face to "life and health insurance"; claims processing is in
+neither point. No Annex III classification is asserted here for claims
+processing agents — see `domains/insurance.md`, where the same withdrawal is
+recorded.] Agent products that are high-risk under §5(b) require full high-risk
+conformity documentation and EU database registration before market
+placement.
 
 **Customer advisory agents** require classification analysis at Stage 1. An
 agent that provides analysis for a human advisor to act upon is not necessarily
 Annex III. An agent whose output constitutes the recommendation delivered to
 the customer — without meaningful human intervention in the recommendation
-itself — is a candidate for Annex III §5(b) if the recommendation concerns
-essential financial services. Binding recommendations affecting
-creditworthiness or insurance risk are high-risk; informational responses that
-do not determine access to services require case-by-case analysis.
+itself — is a candidate for Annex III §5(b) only if the recommendation
+evaluates the creditworthiness of a natural person or establishes a credit
+score, which is the whole of what §5(b) reaches; "essential financial services"
+is not a criterion in that point's text, and "access to and enjoyment of
+essential private services and essential public services and benefits" is the
+heading of point 5 rather than an operative test. Binding recommendations
+evaluating creditworthiness are high-risk under §5(b); binding recommendations
+on insurance risk are high-risk under §5(c) only for life and health insurance;
+informational responses that do neither require case-by-case analysis.
 
-**Fraud detection agents** may fall under Annex III §5(b) where fraud decisions
-affect customer account access, or Annex III §6 where deployed by
-public-authority partners in law enforcement contexts. Private enterprise fraud
-detection that triggers account restriction without binding legal effect is not
-automatically Annex III, but it requires documented classification analysis at
-Stage 1.
+**Fraud detection agents** do not fall under Annex III §5(b): that point ends
+"with the exception of AI systems used for the purpose of detecting financial
+fraud", so the instrument excepts them from it expressly. [Classification
+withdrawn 2026-09-05: this paragraph previously stated that fraud detection
+agents may fall under §5(b) where fraud decisions affect customer account
+access, which inverts the point's own exception.] They may fall under Annex III
+§6 where deployed by public-authority partners in law enforcement contexts.
+Private enterprise fraud detection that triggers account restriction without
+binding legal effect is not automatically Annex III, but it requires documented
+classification analysis at Stage 1 — an analysis that does not route through
+§5(b).
 
-**Trading agents** and **AML monitoring agents** do not fit cleanly into Annex
-III categories designed for individual access decisions. Trading agents may
-affect individuals indirectly through market impacts, but Annex III §5(b) is
-focused on individual access to essential services. AML agents that produce SAR
-filing recommendations affecting individuals' account relationships require
-analysis against §5(b). Document the classification analysis; do not assume
-out-of-scope.
+**Trading agents** and **AML monitoring agents** do not fit cleanly into
+Annex III categories designed for individual access decisions. Trading agents may
+affect individuals indirectly through market impacts, but §5(b) reaches only
+the evaluation of a natural person's creditworthiness or the establishment of
+their credit score, which a trading agent does not perform. AML agents
+producing SAR filing recommendations do not perform creditworthiness evaluation
+either, so §5(b) is not the point to analyse them against. [Analysis withdrawn
+2026-09-05: this paragraph previously characterised §5(b) as "focused on
+individual access to essential services" — that is the heading of point 5, not
+the text of §5(b) — and directed AML agents to be analysed against §5(b).
+Whether either agent type is high-risk on another basis is not asserted here.]
+Document the classification analysis; do not assume out-of-scope.
 
 **Regulatory reporting agents** are typically out of Annex III scope when they
 produce documentation for institutional use, not decisions about individuals.
 Minimal-risk classification is appropriate for agents that draft, cross-check,
-or format regulatory reports, subject to the GPAI operator obligations
+or format regulatory reports, subject to the downstream duties by role
 described in
 [agent/agent-regulatory-classification.md](../agent/agent-regulatory-classification.md).
 
@@ -88,7 +110,7 @@ team for high-materiality models.
 **MiFID II appropriateness and suitability documentation** applies to customer
 advisory agent products providing investment-related recommendations. The
 behavioral specification must document how the agent assesses and satisfies
-MiFID II appropriateness criteria; this documentation is an Annex IV input. For
+MiFID II appropriateness criteria; this documentation is an EU AI Act Annex IV input. For
 robo-advice agent products, the MiFID II disclosure requirements apply to the
 agent product's user interface and output format, not only its internal logic.
 
@@ -99,9 +121,13 @@ monitoring evidence. The SLO must be calibrated against customer outcome
 metrics, not only technical accuracy metrics.
 
 The conformity assessment path for most financial services high-risk agent
-products is internal control with EU AI Office database registration (Annex
-VI). Third-party conformity assessment (Annex VII) is not required for Annex
-III §5(b) systems. However, several financial services firms elect third-party
+products is internal control (EU AI Act Annex VI), followed by registration of the
+provider and the system under Article 49(1) in the EU database for high-risk
+AI systems that the Commission maintains under Article 71 — a register the
+AI Office does not hold. EU AI Act Article 49(1) excepts Annex III point 2 (critical
+infrastructure) systems from that registration. Under the
+EU AI Act, third-party conformity assessment (Annex VII) is not required for
+Annex III §5(b) systems. However, several financial services firms elect third-party
 review to satisfy concurrent FCA or PRA expectations for AI systems in
 regulated financial services. Document the election rationale at Stage 1.
 
@@ -127,10 +153,17 @@ contestation workflow that routes the individual's challenge to a human
 reviewer with the authority and the HITL queue visibility to re-examine the
 decision.
 
-GDPR Article 22(4) prohibits solely automated decisions based on special
-category data — health data, genetic data, racial or ethnic origin, political
-opinions, religious beliefs, sexual orientation — except where the individual
-has given explicit consent or Member State law provides for it. For life and
+GDPR Article 22(4) provides that decisions **referred to in Article 22(2)**
+shall not be based on special category data — health data, genetic data, racial
+or ethnic origin, political opinions, religious beliefs, sexual orientation —
+"unless point (a) or (g) of Article 9(2) applies and suitable measures to
+safeguard the data subject's rights and freedoms and legitimate interests are in
+place". The two gateways are Article 9(2)(a) (explicit consent) and Article
+9(2)(g) (necessary for reasons of substantial public interest, on the basis of
+**Union or Member State law** which is proportionate, respects the essence of
+the right and provides suitable and specific safeguards) — not any Member State
+law that "provides for it" — and the safeguards condition applies in addition to
+whichever gateway is relied on. For life and
 health insurance agent products processing health data, this prohibition is the
 binding design constraint: the trust architecture must route every decision
 based on special category data through a human in the decision loop, not merely
@@ -167,10 +200,13 @@ for retail-facing agent products.
 
 **Solvency II** model monitoring and validation requirements apply to agent
 products used in SCR calculation or underwriting decisions feeding technical
-provisions. Annual model validation by an independent validation function is
-required. The APLC evaluation portfolio, when structured to satisfy Solvency II
-model documentation requirements, constitutes the annual validation evidence
-base.
+provisions. Model validation by an independent validation function is
+required: Solvency II Article 124 requires "a regular cycle of model
+validation" and **does not prescribe an annual period; the annual cadence this
+document previously asserted is not stated in Article 124 and is unsourced as
+a Directive obligation (`F2`)**. The APLC evaluation portfolio, when structured
+to satisfy Solvency II model documentation requirements, constitutes the
+validation evidence base.
 
 For agent products processing special category data under GDPR, the data
 protection impact assessment (DPIA) required under GDPR Article 35 must include
@@ -180,10 +216,15 @@ operational life of the agent product.
 
 ### Incident Notification
 
-**DORA Article 19** requires financial entities to notify their competent
-authority of major ICT-related incidents. The notification timeline is: initial
-notification within 4 hours of the incident being classified as major;
-intermediate report within 72 hours; final report within 1 month. Behavioral
+**DORA Article 19** requires financial entities to report major ICT-related
+incidents to the relevant competent authority. Article 19(4) prescribes three
+submissions — (a) an initial notification, (b) an intermediate report, (c) a
+final report — but **sets no deadline for any of them**: they are due "within
+the time limits to be laid down in accordance with Article 20, first
+paragraph, point (a), point (ii)", i.e. in the ESAs' regulatory technical
+standards. Take the operative hour and day figures from the RTS adopted under
+DORA Article 20, first paragraph, point (a)(ii), and record the version relied
+on; do not attribute them to Article 19. Behavioral
 incidents in agent products qualify as ICT-related incidents for DORA purposes.
 An agent product that produces systematically incorrect outputs affecting
 customer accounts, market positions, or regulatory submissions is a major ICT
@@ -211,13 +252,57 @@ limit breach. The APLC escalation path (quality incident → accountable human �
 model risk governance) is the SR 11-7 incident management workflow for agent
 products classified as models.
 
-EU AI Act Article 73 requires providers and operators of high-risk AI systems
-to report serious incidents to the market surveillance authority. A serious
-incident is one that has led to, or may have led to, harm to health, safety, or
-fundamental rights. For financial services agent products, a behavioral
-incident that causes a discriminatory credit or insurance decision, or that
-causes significant financial harm to a consumer, is potentially an Article 73
-serious incident. The incident triage process at Stage 5 must include
-assessment of whether a quality incident meets the Article 73 serious incident
-threshold, and the escalation path must reach a person with the authority and
-knowledge to make that determination.
+**EU AI Act Article 73(1)** requires the *provider* of a high-risk AI system
+placed on the Union market to report any serious incident to the market
+surveillance authorities of the Member States where that incident occurred. It
+binds providers, not "operators": Article 3(8) defines an operator as a
+provider, product manufacturer, deployer, authorised representative, importer
+or distributor, a class far broader than the one Article 73(1) addresses. A
+financial entity that uses a third party's agent product is a *deployer*, and
+its own reporting duty is **Article 26(5)**, which requires it, on identifying
+a serious incident, to immediately inform first the provider and then the
+importer or distributor and the relevant market surveillance authorities — and
+applies Article 73 *mutatis mutandis* only where the deployer cannot reach the
+provider. Naming the wrong duty-holder here tells the wrong person to file.
+
+The Article 73 reporting deadlines differ by incident type, and each is stated
+here alongside the duty it governs rather than in a table elsewhere. The
+general report is due immediately after the provider has established a causal
+link between the AI system and the serious incident or the reasonable
+likelihood of such a link, and **in any event not later than 15 days** after
+the provider or, where applicable, the deployer becomes aware of the incident
+(Art. 73(2)). Where a person has died, the report is due immediately after a
+causal relationship is established or as soon as it is suspected, and **not
+later than 10 days** after awareness (Art. 73(4)). For a widespread
+infringement, or a serious incident within Article 3(49)(b) — a serious and
+irreversible disruption of the management or operation of critical
+infrastructure — the report is due immediately and **not later than two days**
+after awareness (Art. 73(3)). An infringement of obligations under Union law
+intended to protect fundamental rights is Article 3(49)(c); it is **not** in
+the Article 73(3) carve-out and therefore carries **no shorter clock** than the
+general 15-day period of Article 73(2). This matters directly here: the
+discriminatory-decision case below is a fundamental-rights incident, and
+treating it as a two-day filing, or a death as a two-day filing, misstates the
+Act in opposite directions.
+
+Article 3(49) defines a serious incident as an incident or malfunctioning of an
+AI system that directly or indirectly leads to any of four outcomes: the death
+of a person, or serious harm to a person's health; a serious and irreversible
+disruption of the management or operation of critical infrastructure; the
+infringement of obligations under Union law intended to protect fundamental
+rights; or serious harm to property or the environment. For financial services
+agent products, a behavioral incident that causes a discriminatory credit or
+insurance decision is potentially an Article 73 serious incident under the
+fundamental-rights limb, and one that causes significant financial harm to a
+consumer must be assessed against the property limb. The incident triage
+process at Stage 5 must include assessment of whether a quality incident meets
+the Article 73 serious incident threshold, and the escalation path must reach a
+person with the authority and knowledge to make that determination within the
+applicable period above — the clock runs from awareness of the incident, not
+from the completion of the internal triage.
+
+Article 73 prescribes no report content in any of its eleven paragraphs. The
+Commission guidance mandated by **Article 73(7)**, due 2 August 2025, is the
+forthcoming source for report content; until it is available, any content
+checklist an organisation uses is its own construction and should be marked as
+such rather than attributed to Article 73.

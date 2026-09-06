@@ -57,7 +57,7 @@ Foundation model updates are the most distinctive maintenance challenge for agen
 
 Subscribe to all provider update notification channels for every model provider used in any deployed agent product — release notes, status pages, developer mailing lists, and any provider-specific monitoring APIs that surface model version information. This subscription must be a named operational responsibility, not an implicit assumption that engineers will notice.
 
-For each deployed agent product, the composite state manifest records the foundation model component with a `date_confirmed` field — the date on which the model version was last verified to be the version currently served by the provider. The gap between `date_confirmed` and today is the window of unverified exposure to a silent model update. For deployments where behavioral consistency is critical — regulated systems, high-risk EU AI Act systems, consumer-facing deployments with significant user populations — the `date_confirmed` field must be refreshed at least weekly by verifying the model version through the provider's API or documentation. For lower-risk deployments, monthly confirmation is the minimum.
+For each deployed agent product, the composite state manifest records the foundation model component with a `date_confirmed` field — the date on which the model version was last verified to be the version currently served by the provider. The gap between `date_confirmed` and today is the window of unverified exposure to a silent model update. For deployments where behavioral consistency is critical — regulated systems, high-risk EU AI Act systems, consumer-facing deployments with significant user populations — the `date_confirmed` field must be refreshed at least weekly by verifying the model version through the provider's API or documentation, and for lower-risk deployments monthly confirmation is the minimum — both cadences are policy-set defaults, chosen rather than derived from observed silent-update frequency.
 
 When a provider update notification is received, the immediate assessment question is: does this update affect any component of any deployed agent product's composite state? Map the notified model name to every composite state manifest that references it. Every affected deployment must enter the model update governance procedure regardless of the apparent scope of the provider's change description. Provider change descriptions are written for the general developer audience, not for the specific behavioral envelope of your agent product. A change described as "minor safety improvements" may have material effects on refusal rates or response patterns in your deployment context.
 
@@ -65,7 +65,7 @@ A CSH change detected in operational monitoring that corresponds to no operator-
 
 **Behavioral probe-based detection for silent behavioral updates.** The `date_confirmed` field and CSH monitoring address silent model updates that change the model identifier. They do not address updates that change the model's behavior without changing its identifier — a documented practice with hosted AI models. For these updates, behavioral probe-based detection is required as a supplementary control.
 
-Weekly, execute the sentinel probe set (a designated 20-probe minimum subset of the behavioral fingerprint probe set) against the live production model. The sentinel probe set is designated at Stage 2 in the behavioral specification and is selected to maximize sensitivity to behavioral changes across: hard boundary compliance, uncertainty expression calibration, persona consistency, and the use cases most critical to the agent's specification. Probe responses are compared against the release baseline fingerprint. A shift in the response distribution for any probe that exceeds the drift threshold defined in the behavioral specification is treated as a probable silent model update.
+Weekly, execute the sentinel probe set (a policy-set 20-probe minimum subset of the behavioral fingerprint probe set, chosen rather than sized for statistical detection power) against the live production model. The sentinel probe set is designated at Stage 2 in the behavioral specification and is selected to maximize sensitivity to behavioral changes across: hard boundary compliance, uncertainty expression calibration, persona consistency, and the use cases most critical to the agent's specification. Probe responses are compared against the release baseline fingerprint. A shift in the response distribution for any probe that exceeds the drift threshold defined in the behavioral specification is treated as a probable silent model update.
 
 When a behavioral probe detection alert fires without a corresponding CSH change: (1) treat the alert as a probable provider-initiated behavioral update; (2) immediately run the full Layer 2 and Layer 3 behavioral evaluation portfolio against the current model; (3) if the portfolio reveals behavioral changes outside the specification, initiate the rejection procedure, including consideration of model pinning to the last confirmed behavioral state; (4) file a model update record in the version history with event type `model-update`, `provider-initiated` flag, and a note that the update was detected by behavioral probing rather than CSH monitoring; (5) update `date_confirmed` to reflect the probe date.
 
@@ -145,7 +145,7 @@ Before any recalibration change is deployed to production, it must pass a recali
 4. The composite state manifest must be updated with all changed component versions and the new CSH.
 5. The product owner and accountable human must sign off on the recalibration gate assessment.
 
-A recalibration that passes engineering tests but has not been evaluated for behavioral impact is an untested change. The framing "we verified the code works, we did not have time to re-run behavioral evaluation" is not a recalibration gate pass — it is a request to bypass the gate. Bypassing the recalibration gate is acceptable only under conditions equivalent to the ASDLC's emergency change procedure: immediately followed by post-hoc evaluation within 48 hours, with the behavioral risk of the gap explicitly accepted by the accountable human and documented in the version history.
+A recalibration that passes engineering tests but has not been evaluated for behavioral impact is an untested change. The framing "we verified the code works, we did not have time to re-run behavioral evaluation" is not a recalibration gate pass — it is a request to bypass the gate. Bypassing the recalibration gate is acceptable only under conditions equivalent to the ASDLC's emergency change procedure: immediately followed by post-hoc evaluation within a policy-set 48 hours, with the behavioral risk of the gap explicitly accepted by the accountable human and documented in the version history.
 
 **"Closed" defined.** A Stage 5 quality incident that triggers Stage 6 recalibration is "closed" only when all four of the following conditions are confirmed: (a) the recalibration is deployed to production, (b) a behavioral evaluation re-run confirms that the targeted behavior is within specification post-recalibration, (c) the behavioral baseline is updated in the composite state manifest to reflect the recalibrated state, AND (d) Stage 5 monitoring thresholds are confirmed appropriate for the recalibrated agent — specifically, that the thresholds account for any behavioral metric shifts the recalibration intentionally produced. A recalibration deployed without confirmation of (b), (c), and (d) is not closed; it is a recalibration whose effectiveness is unknown. The incident remains open until all four conditions are met and recorded.
 
@@ -189,7 +189,7 @@ Knowledge base content must not only be versioned (to detect what changed) but v
 
 **At retrieval.** When a document is retrieved for inclusion in the agent's context, the retrieval infrastructure recomputes the document hash and verifies it against the stored ingestion hash. A mismatch means the document has been modified since ingestion — either through a legitimate update (which should have been recorded as a new document version with a new hash) or through unauthorized modification.
 
-**On hash mismatch.** A retrieval integrity failure (hash mismatch) is treated as a behavioral incident of the Adversarial class. The specific response: (1) the document is excluded from the retrieval result and replaced with a staleness notification in the agent's context; (2) the retrieval integrity failure is logged to AGKB as an incident record; (3) the product owner and Technical Owner are notified within 1 hour; (4) the knowledge base is taken offline for the affected document categories pending investigation of whether the modification was authorized, unauthorized, or erroneous.
+**On hash mismatch.** A retrieval integrity failure (hash mismatch) is treated as a behavioral incident of the Adversarial class. The specific response: (1) the document is excluded from the retrieval result and replaced with a staleness notification in the agent's context; (2) the retrieval integrity failure is logged to AGKB as an incident record; (3) the product owner and Technical Owner are notified within a policy-set 1 hour; (4) the knowledge base is taken offline for the affected document categories pending investigation of whether the modification was authorized, unauthorized, or erroneous.
 
 **Integrity verification in the composite state manifest.** The `source_manifest_hash` field in the knowledge base component of the composite state manifest captures the document list — it does not capture per-document content integrity. The per-document content hashes are stored in the Knowledge Source Registry. Both records are required: the source manifest hash confirms the scope of the knowledge base; the per-document hashes confirm the content has not been modified. A composite state manifest without corresponding per-document hashes in the Knowledge Source Registry is incomplete from an integrity perspective.
 
@@ -252,8 +252,8 @@ The provenance record does not need to store the full interaction history for ev
 
 Expiration policies by category:
 
-- Session summaries: expire after a defined inactivity period for the relevant user or context (recommended: 6 months of inactivity triggers review; 12 months triggers automatic expiration unless explicitly renewed)
-- User preferences: expire after a defined period (recommended: 12 months, with renewal on next active interaction confirming the preference is still current)
+- Session summaries: expire after a defined inactivity period for the relevant user or context (policy-set recommendation, chosen rather than measured: 6 months of inactivity triggers review; 12 months triggers automatic expiration unless explicitly renewed)
+- User preferences: expire after a defined period (policy-set recommendation: 12 months, with renewal on next active interaction confirming the preference is still current)
 - Domain heuristics: expire when the relevant domain specification or knowledge base content is updated — a heuristic that was learned from a prior knowledge state may not be valid after a knowledge base update
 - Safety-relevant learned context: do not expire on a time basis; review at each memory review cycle and expire only on explicit product owner decision
 
@@ -267,7 +267,7 @@ Memory volume and category distribution monitoring (Stage 5 memory write anomaly
 
 **Detection methodology.** At the frequency defined in the memory review cadence (monthly for high-interaction deployments, quarterly for moderate), conduct a semantic analysis of the memory corpus against the behavioral specification:
 
-1. Draw a representative sample of memory items from the current corpus (minimum sample size: the larger of 200 items or 5% of the corpus).
+1. Draw a representative sample of memory items from the current corpus (policy-set minimum sample size, chosen rather than derived from a power calculation: the larger of 200 items or 5% of the corpus).
 2. Compute embeddings for the sampled memory items using the same embedding model as the agent's retrieval system.
 3. Compute the centroid of the sample embedding — the center of mass of the memory corpus's semantic content.
 4. Compare the centroid against two reference points: (a) the release-baseline memory centroid (established at Stage 4 from the initial memory state or the most recent full memory reset); (b) the behavioral specification's use-case coverage map centroids (the semantic center of each use-case zone, computed from the behavioral specification content).
@@ -355,7 +355,7 @@ Erasure requests are received by the Regulatory Owner and logged as GDPR erasure
 - Data subject identifier (pseudonymised in the intake record)
 - Scope of erasure — specific sessions, all interactions, or specific data categories
 - Legal basis assessment — whether any retention obligation under another regulation conflicts with erasure
-- Deadline — GDPR Article 12(3) requires response within 30 calendar days, with a 60-day extension available for complex cases where the extension is communicated to the data subject within 30 days
+- Deadline — GDPR Article 12(3) requires the controller to provide information on action taken "without undue delay and in any event within one month of receipt of the request"; "that period may be extended by two further months where necessary, taking into account the complexity and number of the requests", and the controller must inform the data subject of the extension, with reasons, within one month of receipt. **The period is one month, not 30 days, and the extension is two further months, not 60 days; the day-counts previously stated here are not in Article 12(3) and are unsourced (`F2`). Do not convert a month to a fixed number of days when building a schedule — compute the deadline from the calendar month, which is what the Regulation binds you to**
 
 The intake record is the authoritative governance artifact for the erasure request lifecycle. All subsequent actions reference the intake record identifier.
 
@@ -448,11 +448,11 @@ Different knowledge domains have different acceptable staleness thresholds, defi
 
 | Content Category | Default Maximum Staleness |
 | --- | --- |
-| Regulatory and legal content | 30 days — regulatory changes can invalidate agent behavior without warning |
-| Clinical and safety-critical domain knowledge | 60 days |
-| Technical domain knowledge | 90 days |
-| Product documentation | 90 days |
-| General domain knowledge | 180 days |
+| Regulatory and legal content | 30 days (policy-set) — regulatory changes can invalidate agent behavior without warning |
+| Clinical and safety-critical domain knowledge | 60 days (policy-set) |
+| Technical domain knowledge | 90 days (policy-set) |
+| Product documentation | 90 days (policy-set) |
+| General domain knowledge | 180 days (policy-set) |
 
 These are default maxima. A behavioral specification may specify shorter thresholds for any category based on the deployment's risk profile and the rate of change of the relevant domain. A threshold longer than the default requires explicit Regulatory Owner approval and documented justification. Staleness threshold configuration is a Stage 2 decision stored in AGKB; changes to thresholds after Stage 2 are behavioral specification revisions and require the Stage 2 revision process.
 

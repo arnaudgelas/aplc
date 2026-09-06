@@ -12,15 +12,15 @@ See [agent-behavioral-specification.md](agent-behavioral-specification.md) for t
 
 ## What is Stage 5 — Operate?
 
-Stage 5 begins when the agent enters production and runs concurrently with Stage 6 (Maintain) until the retirement trigger fires as defined in [agent-retirement.md](agent-retirement.md). Operations for an agent product is categorically different from software operations: the primary operational concern is not "is the service up?" but "is the agent still behaving as specified?" Service health monitoring is necessary; it is not sufficient. An agent can be fully available and actively causing harm — returning HTTP 200 on every request while producing outputs that violate its behavioral envelope, manipulate users, or expose personal data it was specified never to surface. The ASDLC's `operations-governance.md` defines the operational observability stack for software services that underpins this stage; that stack is required here and does not replace what this document adds. Stage 5 begins where service observability ends.
+Stage 5 begins when the agent enters production and runs concurrently with Stage 6 (Maintain) until the retirement trigger fires as defined in [agent-retirement.md](agent-retirement.md). Operations for an agent product is categorically different from software operations: the primary operational concern is not "is the service up?" but "is the agent still behaving as specified?" Service health monitoring is necessary; it is not sufficient. An agent can be fully available and actively causing harm — returning HTTP 200 on every request while producing outputs that violate its behavioral envelope, manipulate users, or expose personal data it was specified never to surface. The ASDLC's operations governance document (`asdlc/operations/governance.md`) defines the operational observability stack for software services that underpins this stage; that stack is required here and does not replace what this document adds. Stage 5 begins where service observability ends.
 
 ---
 
 ## Behavioral Observability vs. Service Observability
 
-The ASDLC's `operations-governance.md` defines the operational observability floor for software services deployed through the agentic SDLC: service health metrics, SLO indicators, output quality rate, reasoning trace completeness, and cost anomaly detection. That floor is required here without modification. A deployed agent product that does not meet the ASDLC's operational readiness conditions is not ready for Stage 5, regardless of how well it performed in Stage 3 evaluation.
+The ASDLC's operations governance document (`asdlc/operations/governance.md`) defines the operational observability floor for software services deployed through the agentic SDLC: service health metrics, SLO indicators, output quality rate, reasoning trace completeness, and cost anomaly detection. That floor is required here without modification. A deployed agent product that does not meet the ASDLC's operational readiness conditions is not ready for Stage 5, regardless of how well it performed in Stage 3 evaluation.
 
-What `operations-governance.md` does not cover is the behavioral observability layer that is specific to agent products: the signals that reveal whether the agent's behavior has remained within its specification, as authored in [agent-behavioral-specification.md](agent-behavioral-specification.md) and baselined at release. Service observability tells you the agent is running. Behavioral observability tells you the agent is still the agent you released.
+What `asdlc/operations/governance.md` does not cover is the behavioral observability layer that is specific to agent products: the signals that reveal whether the agent's behavior has remained within its specification, as authored in [agent-behavioral-specification.md](agent-behavioral-specification.md) and baselined at release. Service observability tells you the agent is running. Behavioral observability tells you the agent is still the agent you released.
 
 The four behavioral observability domains below are required in addition to the ASDLC service observability stack. Each domain must be instrumented before the agent enters production. Instrumentation that does not exist before go-live cannot be retrofitted during an incident.
 
@@ -44,9 +44,9 @@ Monitoring cadence: weekly for high-change-rate knowledge domains (regulatory, c
 
 A declining retrieved context freshness rate provides an earlier signal for knowledge base refresh prioritization than staleness-driven behavioral incidents. It surfaces when the knowledge base's retrieval distribution has shifted away from current content before user-visible quality degradation occurs. The freshness rate trend feeds the Stage 6 Knowledge Staleness Sentinel's prioritization queue: knowledge base content categories with declining freshness rates are elevated in the refresh schedule even if the source documents have not yet triggered a staleness alert.
 
-**Cost envelope compliance rate.** The proportion of sampled interactions where total attributed cost (foundation model inference + knowledge base retrieval + tool API calls + governance agent overhead) remains within the per-interaction cost ceiling defined in the Stage 2 cost envelope. Measurement: sample 10% of interactions weekly, compute total cost per interaction using the cost attribution tags defined in the FinOps governance framework (`agent-finops-governance.md`), compare against the ceiling. A compliance rate below 95% in any measurement window triggers a product owner notification; below 90% sustained over two consecutive windows triggers a mandatory root cause analysis. Cost ceiling exceedances concentrate in specific interaction types (long-context conversations, high-retrieval tasks, multi-step tool chains) — the root cause analysis must identify the interaction pattern driving the exceedance, not just the aggregate rate.
+**Cost envelope compliance rate.** The proportion of sampled interactions where total attributed cost (foundation model inference + knowledge base retrieval + tool API calls + governance agent overhead) remains within the per-interaction cost ceiling defined in the Stage 2 cost envelope. Measurement: sample a policy-set 10% of interactions weekly, compute total cost per interaction using the cost attribution tags defined in the FinOps governance framework (`agent-finops-governance.md`), compare against the ceiling. A compliance rate below a policy-set 95% in any measurement window triggers a product owner notification, and below a policy-set 90% sustained over two consecutive windows triggers a mandatory root cause analysis. Cost ceiling exceedances concentrate in specific interaction types (long-context conversations, high-retrieval tasks, multi-step tool chains) — the root cause analysis must identify the interaction pattern driving the exceedance, not just the aggregate rate.
 
-**FinOps Drift Indicator.** The ratio of actual cost per successful outcome in the current measurement period to the cost envelope baseline established at Stage 4 release. Formula: `FinOps Drift Indicator = (current cost per successful outcome) / (Stage 4 baseline cost per successful outcome)`. The indicator is measured weekly and compared against the cost envelope baseline — not against last week's cost (for the same reason behavioral drift is measured against the release baseline, not the prior measurement window). Alert thresholds: indicator above 1.2 (20% above baseline) generates a product owner notification with a root cause hypothesis; indicator above 1.5 sustained for two consecutive weeks generates a mandatory root cause analysis and Business Owner escalation; indicator above 2.0 triggers the same governance response as an out-of-spec behavioral drift event: immediate accountable human notification, rollback assessment, and documented risk acceptance if no rollback is taken. The FinOps Drift Indicator is a behavioral signal, not an accounting metric — a cost spike that cannot be explained by interaction volume changes is evidence that the agent is doing something different (more retrieval steps, longer reasoning chains, more HITL escalations) that warrants behavioral investigation.
+**FinOps Drift Indicator.** The ratio of actual cost per successful outcome in the current measurement period to the cost envelope baseline established at Stage 4 release. Formula: `FinOps Drift Indicator = (current cost per successful outcome) / (Stage 4 baseline cost per successful outcome)`. The indicator is measured weekly and compared against the cost envelope baseline — not against last week's cost (for the same reason behavioral drift is measured against the release baseline, not the prior measurement window). Alert thresholds, all three policy-set defaults chosen by the authors rather than fitted to observed cost variance: indicator above 1.2 (20% above baseline) generates a product owner notification with a root cause hypothesis; indicator above 1.5 sustained for two consecutive weeks generates a mandatory root cause analysis and Business Owner escalation; indicator above 2.0 triggers the same governance response as an out-of-spec behavioral drift event: immediate accountable human notification, rollback assessment, and documented risk acceptance if no rollback is taken. The FinOps Drift Indicator is a behavioral signal, not an accounting metric — a cost spike that cannot be explained by interaction volume changes is evidence that the agent is doing something different (more retrieval steps, longer reasoning chains, more HITL escalations) that warrants behavioral investigation.
 
 ### Drift Indicators
 
@@ -72,7 +72,7 @@ User experience signals are behavioral observability data. They are not customer
 
 ### Safety Signals
 
-Safety signals require the shortest detection-to-response latency of any behavioral observability domain. A quality incident discovered after 48 hours is a problem. A safety incident discovered after 48 hours may be a regulatory event.
+Safety signals require the shortest detection-to-response latency of any behavioral observability domain. A quality incident discovered after 48 hours is a problem; a safety incident discovered after the same 48 hours may be a regulatory event — the figure is used illustratively here, to contrast the two consequences, and is not a threshold set by this document.
 
 **Flagged interaction rate.** The percentage of interactions flagged by content safety filters — the automated systems that detect harmful content, policy violations, or safety-boundary approaches. Track by flag category. A flag does not confirm a violation; it confirms that a boundary was approached. The human review queue (see HITL Management) processes flags; the flagged interaction rate tells operations whether the filter is operating at expected sensitivity and whether the distribution of flag types is shifting.
 
@@ -82,7 +82,7 @@ Safety signals require the shortest detection-to-response latency of any behavio
 
 **Memory write anomaly rate.** For agents with persistent memory, monitoring of memory write patterns provides an early signal for adversarial memory manipulation — a class of attack where adversarial inputs cause the agent to write persistent memory items that will shift future behavior. Monitor for:
 
-- *Volume anomaly:* memory write volume per session exceeds the deployment baseline by a configurable multiplier (default: 3×). A session that triggers significantly more memory writes than baseline may indicate an adversarial input designed to populate the memory corpus with behavior-influencing content.
+- *Volume anomaly:* memory write volume per session exceeds the deployment baseline by a configurable multiplier (policy-set default: 3×). A session that triggers significantly more memory writes than baseline may indicate an adversarial input designed to populate the memory corpus with behavior-influencing content.
 - *Category distribution anomaly:* the distribution of memory item categories (user preferences, learned heuristics, conversation summaries, etc.) deviates significantly from the baseline distribution. An unusual concentration of writes in a specific category — particularly a category relevant to behavioral constraints — is a targeted manipulation signal.
 - *Principal anomaly:* memory items being written by principal classes that have not historically written to memory in this deployment. An agent that receives user-tier instructions and begins writing operator-context memory items is exhibiting an anomalous behavior that may indicate a principal impersonation exploit.
 
@@ -124,7 +124,7 @@ When drift is detected, classify before responding. Acting before classifying co
 
 **Within-spec drift:** document the finding in the operational monitoring record; assign to the next Stage 6 maintenance cycle; notify the product owner at the scheduled weekly operations report. Do not initiate unreviewed changes to prompt, model configuration, or knowledge base in response to within-spec drift — that is recalibration, which belongs in Stage 6 with its associated governance controls.
 
-**Out-of-spec drift:** immediate notification to the product owner and accountable human (within 1 hour of classification confirmation); within 24 hours, identify root cause using the incident investigation protocol in [agent-composite-versioning.md](agent-composite-versioning.md) — model update, knowledge base change, memory accumulation, input distribution shift, or prompt degradation; within 72 hours, either initiate Stage 6 recalibration (if the root cause requires a behavioral adjustment) or initiate Stage 4 behavioral rollback (if the deviation is severe enough to warrant restoring a prior composite state). The decision between recalibration and rollback belongs to the product owner and accountable human; the operations team provides the evidence. Document the decision and its rationale in the version history.
+**Out-of-spec drift:** immediate notification to the product owner and accountable human (within 1 hour of classification confirmation — a notification commitment measured from confirmed classification, distinct from the HITL response-time SLAs and drift-detection latencies defined in [observability.md](../governance/observability.md#time-bound-governance-figures--definitions)); within 24 hours, identify root cause using the incident investigation protocol in [agent-composite-versioning.md](agent-composite-versioning.md) — model update, knowledge base change, memory accumulation, input distribution shift, or prompt degradation; within 72 hours, either initiate Stage 6 recalibration (if the root cause requires a behavioral adjustment) or initiate Stage 4 behavioral rollback (if the deviation is severe enough to warrant restoring a prior composite state). The decision between recalibration and rollback belongs to the product owner and accountable human; the operations team provides the evidence. Document the decision and its rationale in the version history.
 
 ### Substrate-caused vs Agent-caused Drift Investigation
 
@@ -134,7 +134,7 @@ When agent behavioural quality deteriorates, the drift investigation must distin
 
 **Agent-caused drift.** The deterioration is rooted in the agent itself: the foundation model was updated by the provider and now responds differently to identical context; the system prompt regressed (intentionally or through configuration drift); accumulated memory has shifted the agent's responses; the constraint-classification logic has degraded under input distribution shift independent of substrate state.
 
-**Investigation protocol.** Within 24 hours of out-of-spec drift confirmation, the operations team performs a triage that consults both the agent-side composite-state diff (per `agent-composite-versioning.md`) and the substrate-state diff (per the IGM-governance metadata recorded in the knowledge-base component of the CSH; see `aplc.md` Section 1). The triage produces a classification:
+**Investigation protocol.** Within a policy-set 24 hours of out-of-spec drift confirmation, the operations team performs a triage that consults both the agent-side composite-state diff (per `agent-composite-versioning.md`) and the substrate-state diff (per the IGM-governance metadata recorded in the knowledge-base component of the CSH; see `aplc.md` Section 1). The triage produces a classification:
 
 - **Agent-caused.** The agent-side composite-state diff identifies a non-trivial change (model update, prompt change, memory state delta beyond the agent's normal operating envelope) and the substrate-state diff is small or unchanged. Remediation: per the existing out-of-spec drift protocol — Stage 6 recalibration or Stage 4 rollback.
 - **Substrate-caused.** The substrate-state diff identifies the dominant change (epistemic-tier demotions, new contradictions, decay-cadence overflows, authority succession) and the agent-side composite-state diff is small or unchanged. Remediation: substrate-side investigation and repair before any agent-side recalibration. A recalibration that adjusts the agent to a degraded substrate locks in the degradation as a new baseline.
@@ -151,15 +151,15 @@ For Safety and Adversarial signal threshold exceedances, the notification-then-d
 
 **Trigger conditions.** The circuit-breaker activates automatically when any of the following thresholds are crossed in the real-time monitoring stream, without waiting for human decision:
 
-- Content safety filter flag rate exceeds 3× the release baseline over a 15-minute window
+- Content safety filter flag rate exceeds a policy-set 3× the release baseline over a policy-set 15-minute window
 - Adversarial pattern detection alert fires (any single confirmed alert triggers the circuit-breaker)
 - Hard boundary violation detected in any interaction (zero-tolerance trigger — any single confirmed violation activates the circuit-breaker)
-- HITL queue safety escalations exceed 5× the release baseline over a 30-minute window
+- HITL queue safety escalations exceed a policy-set 5× the release baseline over a policy-set 30-minute window
 
 **Circuit-breaker actions.** On activation, the agent infrastructure automatically:
 
 1. Reduces the agent to its minimum safe operating mode: responds only with a predetermined, human-authored safe response set and the escalation path to a human operator. The agent does not generate new model-based responses until the circuit-breaker is cleared.
-2. Routes all incoming interactions to the HITL queue with Safety escalation priority and SLO (1 hour).
+2. Routes all incoming interactions to the HITL queue with Safety escalation priority and a policy-set 1-hour SLO.
 3. Notifies the accountable human, product owner, and on-call engineer simultaneously, with the trigger condition, the current CSH, and the most recent safety signal values.
 4. Logs the circuit-breaker activation event to AGKB as a Safety incident record.
 
@@ -173,7 +173,7 @@ The following events require immediate re-measurement regardless of where the ag
 
 **CSH change (any component).** Any change to the composite state hash — model version, knowledge base snapshot, prompt version, configuration — triggers immediate re-run of the stability test set and behavioral envelope compliance re-check. Stage 6 is required to file a maintenance notification before any planned CSH change (see Stage 5/6 Concurrency Governance below). If Stage 5 detects a CSH change without a prior maintenance notification, it is treated as unintentional drift, not intentional maintenance, until proven otherwise.
 
-**HITL override rate spike.** An override rate above 2× the rolling baseline over a 48-hour window triggers an immediate behavioral quality audit — re-run of the behavioral envelope compliance check against the current CSH, inspection of the interaction classes driving the spike, and product owner notification within 4 hours. Do not wait for the next scheduled measurement.
+**HITL override rate spike.** An override rate above 2× the rolling baseline over a 48-hour window — multiple and window both policy-set, chosen rather than calibrated against observed override variance — triggers an immediate behavioral quality audit — re-run of the behavioral envelope compliance check against the current CSH, inspection of the interaction classes driving the spike, and product owner notification within 4 hours. Do not wait for the next scheduled measurement.
 
 **Adversarial pattern detection alert.** Any adversarial pattern detection alert triggers immediate behavioral envelope compliance re-check, with particular attention to Layer 1 hard boundary integrity. The re-check must be completed and documented before the alert is closed, regardless of whether the adversarial attempt was successful.
 
@@ -211,7 +211,7 @@ When an agent makes thousands of decisions daily and a defined percentage requir
 
 **Queue SLO.** Maximum time from queue entry to human review completion, defined by escalation class:
 
-| Escalation Class | SLO |
+| Escalation Class | SLO (policy-set) |
 | --- | --- |
 | Safety incident | 1 hour |
 | Adversarial incident | 1 hour |
@@ -239,7 +239,7 @@ Reviewers must record the time taken and the confidence of the decision. Low-con
 
 Flagged patterns from HITL review are reported to the product owner weekly. The report includes: override rate by case category, emerging case patterns not well-covered by the current specification, reviewer agreement rate, and SLO compliance. The product owner reviews and assigns action items.
 
-Patterns indicating a behavioral specification gap — consistent reviewer overrides on a specific case type, or a case type that reviewers flag for specification review at a rate above 5% — trigger a Stage 2 revision process. The specification must be updated before the engineering team adjusts the agent's behavior; a behavioral change without a specification change is an unreviewed change that breaks the traceability chain.
+Patterns indicating a behavioral specification gap — consistent reviewer overrides on a specific case type, or a case type that reviewers flag for specification review at a rate above a policy-set 5% — trigger a Stage 2 revision process. The specification must be updated before the engineering team adjusts the agent's behavior; a behavioral change without a specification change is an unreviewed change that breaks the traceability chain.
 
 Patterns indicating an evaluation gap — cases that the Stage 3 evaluation suite did not cover and where the agent is consistently failing — trigger an evaluation portfolio update. The update is added to the Stage 6 maintenance backlog and scheduled.
 
@@ -249,29 +249,32 @@ The HITL override rate is tracked as an operational metric alongside service hea
 
 **Queue volume.** Is the volume growing beyond the team's review capacity? Queue volume should be stable relative to interaction volume at a defined ratio (the escalation rate target from the behavioral specification). A queue volume that is growing disproportionate to interaction volume indicates a behavioral or distribution change. A queue volume that is shrinking below expected levels indicates either a positive development (the agent has improved) or a broken routing mechanism (cases that should escalate are not reaching the queue).
 
-**Review latency.** Is the SLO being met per escalation class? Track SLO compliance as a percentage. An SLO compliance rate below 95% for safety escalations is a governance failure requiring immediate resource action. An SLO compliance rate below 90% for quality review samples indicates that review capacity is insufficient for the interaction volume.
+**Review latency.** Is the SLO being met per escalation class? Track SLO compliance as a percentage. An SLO compliance rate below a policy-set 95% for safety escalations is a governance failure requiring immediate resource action, and one below a policy-set 90% for quality review samples indicates that review capacity is insufficient for the interaction volume.
 
-**Override rate.** Track overall and by case category and reviewer. A high overall override rate (above 15% on quality review samples) indicates behavioral specification failure or model performance regression. A high override rate on a specific case category indicates a specification gap for that zone. High override rates concentrated on a specific reviewer may indicate calibration drift in the reviewer, not the agent — a fact that can only be distinguished by comparing across reviewers.
+**Override rate.** Track overall and by case category and reviewer. A high overall override rate (above a policy-set 15% on quality review samples, a chosen default rather than a measured baseline) indicates behavioral specification failure or model performance regression. A high override rate on a specific case category indicates a specification gap for that zone. High override rates concentrated on a specific reviewer may indicate calibration drift in the reviewer, not the agent — a fact that can only be distinguished by comparing across reviewers.
 
-**Reviewer agreement rate.** For cases that receive multiple reviews (calibration exercises, escalated decisions), what percentage of reviewers agree on the correct action? A reviewer agreement rate below 70% on a case type indicates that the behavioral specification for that type is not clear enough to produce consistent human judgment. If human reviewers cannot agree on the correct behavior, the specification is not a specification — it is an interpretation exercise. The specification must be revised before the agent can be expected to behave consistently.
+**Reviewer agreement rate.** For cases that receive multiple reviews (calibration exercises, escalated decisions), what percentage of reviewers agree on the correct action? A reviewer agreement rate below a policy-set 70% on a case type — a chosen default, not a measured inter-rater reliability floor — indicates that the behavioral specification for that type is not clear enough to produce consistent human judgment. If human reviewers cannot agree on the correct behavior, the specification is not a specification — it is an interpretation exercise. The specification must be revised before the agent can be expected to behave consistently.
 
 ### HITL Governance Capture Detection
 
 HITL governance capture is the analog of rubber-stamping in the review process: a HITL queue that processes cases at high throughput with near-universal approval is not providing human oversight — it is providing the appearance of human oversight while the actual behavioral governance function has collapsed. Capture can occur through resource pressure, reviewer fatigue, misaligned incentives, or insufficient reviewer rotation. It must be detected and corrected with the same urgency as a behavioral incident.
 
-**Detection thresholds.** Any of the following patterns, observed across the specified window, constitutes a governance capture signal requiring escalation:
+**Detection thresholds.** Any of the following patterns, observed across the specified window, constitutes a governance capture signal requiring escalation. **These are screens, and they are asymmetric** — see "What these thresholds cannot do" below before treating any of them as evidence that review is functioning:
 
-- Reviewer agreement rate above 95% on quality review samples for 4 consecutive weeks. Genuine quality review of a non-trivial behavioral specification produces disagreement; suspiciously high agreement indicates that reviewers are not exercising independent judgment, that cases are being routed to the wrong reviewers, or that the review process has been compressed to the point where substantive review is not occurring.
-- Override rate below 2% on quality review samples for 4 consecutive weeks when the behavioral specification is known to include edge cases, ambiguous zones, or known difficult case types. A specification with acknowledged complexity that produces near-zero overrides has reviewers who are approving without reviewing.
-- Same reviewer pool for 3 consecutive evaluation cycles without rotation. Reviewer pools that do not rotate develop shared blind spots, group norms that diverge from the specification, and social pressure against override decisions. Rotation is a structural control, not a preference.
-- Review latency consistently below the minimum plausible review time for the case type for 2 consecutive weeks. If quality review samples are being closed faster than is humanly possible given the case complexity, the review is not occurring. Define minimum plausible review times at deployment, per case type, before go-live.
+- Reviewer agreement rate above a policy-set 95% on quality review samples for 4 consecutive weeks. Genuine quality review of a non-trivial behavioral specification produces disagreement; suspiciously high agreement indicates that reviewers are not exercising independent judgment, that cases are being routed to the wrong reviewers, or that the review process has been compressed to the point where substantive review is not occurring.
+- Override rate below a policy-set 2% on quality review samples for 4 consecutive weeks when the behavioral specification is known to include edge cases, ambiguous zones, or known difficult case types. A specification with acknowledged complexity that produces near-zero overrides has reviewers who are approving without reviewing.
+- Same reviewer pool for 3 consecutive evaluation cycles without rotation, three being a policy-set default rather than a measured onset of shared blind spots. Reviewer pools that do not rotate develop shared blind spots, group norms that diverge from the specification, and social pressure against override decisions. Rotation is a structural control, not a preference.
+- Review latency consistently below the minimum plausible review time for the case type for 2 consecutive weeks, the two-week window being policy-set while the minimum plausible review time is set locally, per case type, at deployment. If quality review samples are being closed faster than is humanly possible given the case complexity, the review is not occurring. Define minimum plausible review times at deployment, per case type, before go-live.
+
+**What these thresholds cannot do.** Every threshold above is a behavioural proxy that a reviewer can satisfy without doing the cognitive work: a minimum-plausible-latency floor is met by waiting, an agreement ceiling is met by disagreeing on trivia, and a 2% override floor is met by overriding easy cases. Human-factors research on monitoring highly reliable automation reports that operators habituate rapidly to timing and acknowledgement controls of exactly this kind, and no safety-critical field has a validated, non-disruptive method for distinguishing functional oversight from rubber-stamping in live operations. (Evidence via the commissioned synthesis *Progressive Automation Safety Evaluation*, citing Bainbridge 1983 and Parasuraman & Riley 1997; a secondary source, not second-read against those primaries.) The thresholds therefore detect *careless* capture and not *adapted* capture. **They are adequate to fire this condition and inadequate to clear it.** A queue that trips none of them is not thereby demonstrated to be under real human oversight, and a falling override rate is not evidence of improvement — it is the composite of the agent's error rate and the reviewer's disengagement, and it falls identically under both. Use these as continuous screens; do not use them as the assurance basis for an oversight-pattern transition. That evidence comes from the Engagement Falsification Protocol in [agent-human-oversight.md](agent-human-oversight.md), criterion 5, which is itself proposed and unvalidated.
 
 **Response.** On detection of any governance capture signal:
 
-1. Escalate to the product owner within 24 hours with the specific detection evidence.
-2. Mandatory rotation of at least 50% of the reviewer pool for the next evaluation cycle. Rotation is not optional pending investigation — it is the immediate structural response.
-3. If the capture pattern continues for 2 consecutive cycles after the first escalation: add at least one external reviewer (outside the team that has been conducting reviews) for the next cycle. Document the rationale for the external reviewer selection.
-4. Audit the review records from the detection window: select a sample of approved cases and conduct a secondary review by a different reviewer pool. Document any disagreements as retrospective overrides.
+1. Escalate to the product owner within a policy-set 24 hours with the specific detection evidence.
+2. **Reduce first.** Reduce the autonomy scope or the review volume for the affected case category until review can be substantive again — narrow the case types routed for autonomous handling, or lower the oversight pattern one step — then investigate. Capture is a volume-and-conditions failure before it is a personnel failure.
+3. Mandatory rotation of at least 50% of the reviewer pool — a policy-set fraction, chosen rather than measured — for the next evaluation cycle. Rotation is not optional pending investigation — it is the immediate structural response.
+4. **Do not add reviewers to the same queue at the same volume.** This was previously specified here as the escalation for a persistent capture pattern, and it is the specific mitigation the evidence names as ineffective: Skitka, Mosier et al. report two-person crews making omission and commission errors at rates statistically indistinguishable from solo operators with highly reliable decision aids (same synthesis as above; primary not second-read). A second reviewer under the same conditions inherits the same habituation and adds accountability diffusion. The agentic engineering manifesto's adoption metrics document (`agentic-engineering-manifesto/adoption/metrics.md`) carries the correct instruction — *"Do not add more reviewers. Reduce autonomy scope … The problem is volume, not capacity"* — and this document is aligned to it. **What is not ruled out is independent review**, which is a different intervention: an adjudicator outside the live loop, working from different evidence, with a different scope and their own authority, is not additional headcount on the same queue, and the crew finding does not speak to it. That is step 5.
+5. Audit the review records from the detection window: select a sample of approved cases and conduct a **blind** secondary review by adjudicators outside the review team, who see neither the original reviewer's decision nor the agent's confidence signalling. Document any disagreements as retrospective overrides. This disagreement rate is the only measurement in this section taken against real traffic rather than a proxy, and it is what a restoration decision should rest on.
 
 **Record.** Every governance capture detection event — including the specific detection threshold triggered, the escalation record, the rotation action taken, and the secondary audit findings — must be documented in the operational governance record and made visible in the Stage 5 monitoring dashboard. HITL capture events are not internal housekeeping; they are evidence that a governance control was not functioning, and they must be traceable.
 
@@ -297,12 +300,12 @@ Stage 5 generates three structured feedback paths to upstream stages. Stating th
 A deployed fix without an evaluation portfolio update is **not a closed loop.** The fix may have addressed the specific incident; the gap in the evaluation suite remains, and the next release will pass the Stage 3 gate without being tested against the pattern that caused the incident.
 
 **Mandatory-entry threshold.** Evaluation gap signal creation is mandatory — not optional, not at the discretion of the operations team — in the following conditions:
-- Any incident class recurring in 3 or more incidents within a 60-day rolling window. Three recurrences within 60 days indicates that the evaluation portfolio is not detecting a real failure mode. The gap must enter Stage 3 as a mandatory evaluation portfolio update, not as a maintenance backlog item subject to prioritization.
+- Any incident class recurring in 3 or more incidents within a 60-day rolling window, both figures policy-set. Three recurrences within 60 days indicates that the evaluation portfolio is not detecting a real failure mode. The gap must enter Stage 3 as a mandatory evaluation portfolio update, not as a maintenance backlog item subject to prioritization.
 - Any single incident at P1 or P2 severity (as defined in the deployment's incident severity classification). Severity alone triggers mandatory Stage 3 entry regardless of recurrence count.
 
 **SLOs.**
-- Evaluation gap signal created within 5 business days of pattern identification (not 5 days from incident detection — from the point at which root cause analysis confirms the evaluation gap).
-- Evaluation portfolio update confirmed (loop closed per the three-condition definition above) within 30 calendar days of signal creation.
+- Evaluation gap signal created within a policy-set 5 business days of pattern identification (not 5 days from incident detection — from the point at which root cause analysis confirms the evaluation gap).
+- Evaluation portfolio update confirmed (loop closed per the three-condition definition above) within a policy-set 30 calendar days of signal creation.
 
 ### Stage 5 → Stage 2: Specification Gap Signal
 
@@ -320,12 +323,12 @@ A deployed fix without an evaluation portfolio update is **not a closed loop.** 
 Updating the specification without re-running evaluation is not a closed loop. Recalibrating the agent to behave differently without updating the specification first is not a closed loop and is a traceability violation.
 
 **Mandatory-entry threshold.** Specification gap signal creation is mandatory in the following conditions:
-- Reviewer agreement rate below 70% on a specific case type for 2 consecutive weeks. If human reviewers cannot agree on the correct behavior for 2 consecutive weeks, the specification is not specifying behavior for that case type — it is producing interpretive disagreement. That is a mandatory specification revision, not a calibration adjustment.
-- HITL override rate above 15% on a specific case category for 3 consecutive weeks. A sustained override rate at this level indicates that the agent's behavior on that case category is consistently diverging from what qualified reviewers consider correct — and that the divergence is systematic, not incidental.
+- Reviewer agreement rate below a policy-set 70% on a specific case type for 2 consecutive weeks. If human reviewers cannot agree on the correct behavior for 2 consecutive weeks, the specification is not specifying behavior for that case type — it is producing interpretive disagreement. That is a mandatory specification revision, not a calibration adjustment.
+- HITL override rate above a policy-set 15% on a specific case category for 3 consecutive weeks. A sustained override rate at this level indicates that the agent's behavior on that case category is consistently diverging from what qualified reviewers consider correct — and that the divergence is systematic, not incidental.
 
 **SLOs.**
-- Specification gap signal created within 5 business days of pattern identification.
-- Stage 2 specification revision initiated within 15 calendar days of signal creation. Initiation means the revision process has a named owner, a defined scope, and a target completion date — not that the revision is complete.
+- Specification gap signal created within a policy-set 5 business days of pattern identification.
+- Stage 2 specification revision initiated within a policy-set 15 calendar days of signal creation. Initiation means the revision process has a named owner, a defined scope, and a target completion date — not that the revision is complete.
 
 ### Stage 5 → Stage 1: Trust Degradation Escalation
 
@@ -336,16 +339,16 @@ Updating the specification without re-running evaluation is not a closed loop. R
 **Ownership.** The product owner initiates the trust degradation report and delivers it to the business demand sponsor who commissioned the Stage 1 business case. The Stage 1 review is owned at the same level as the original business case commissioning — it is a strategic decision, not an operational one.
 
 **SLOs.**
-- Trust degradation report delivered within 10 business days of the second consecutive declining monthly period.
-- Stage 1 review initiated within 20 calendar days of report delivery. Initiated means the review has a named facilitator, a defined scope, and a scheduled first session — not that the review is complete.
+- Trust degradation report delivered within a policy-set 10 business days of the second consecutive declining monthly period.
+- Stage 1 review initiated within a policy-set 20 calendar days of report delivery. Initiated means the review has a named facilitator, a defined scope, and a scheduled first session — not that the review is complete.
 
 ---
 
 ## Agent Incident Management
 
-The five incident classes below are specific to agent products. They supplement, not replace, the infrastructure and application incident classes defined in the ASDLC's `operations-governance.md`. An agent product may experience a quality incident and an availability incident simultaneously — they are separate incidents with separate response procedures, coordinated by the on-call engineer and the product owner.
+The five incident classes below are specific to agent products. They supplement, not replace, the infrastructure and application incident classes defined in the ASDLC's operations governance document (`asdlc/operations/governance.md`). An agent product may experience a quality incident and an availability incident simultaneously — they are separate incidents with separate response procedures, coordinated by the on-call engineer and the product owner.
 
-All incidents require a post-incident review within five business days. The review must produce: root cause documented with evidence; specification, evaluation, or operational gap identified; corrective action assigned with owner and due date; and updated runbook entry covering this failure mode for future on-call reference.
+All incidents require a post-incident review within a policy-set five business days. The review must produce: root cause documented with evidence; specification, evaluation, or operational gap identified; corrective action assigned with owner and due date; and updated runbook entry covering this failure mode for future on-call reference.
 
 ### Quality Incident
 
@@ -355,7 +358,7 @@ All incidents require a post-incident review within five business days. The revi
 
 **Response.**
 
-1. Notify the product owner within 4 hours of alert.
+1. Notify the product owner within a policy-set 4 hours of alert.
 2. Examine the behavioral monitoring dashboard: which quality metrics are degraded? Which use-case zones are affected? What is the time onset?
 3. Retrieve the CSH at the time quality degradation began and compare to the release-baseline CSH using the incident investigation protocol in [agent-composite-versioning.md](agent-composite-versioning.md). Identify which components changed.
 4. Root cause analysis: model drift, knowledge base staleness, prompt degradation, input distribution shift, or evaluation gap? Document the evidence for each hypothesis.
@@ -372,7 +375,7 @@ All incidents require a post-incident review within five business days. The revi
 
 **Response.**
 
-1. Immediate notification to the accountable human (within 1 hour of detection, not 1 hour of classification).
+1. Immediate notification to the accountable human (within a policy-set 1 hour of detection, not 1 hour of classification).
 2. Stage 4 rollback assessment: is the deviation severe enough — or the behavioral specification violation clear enough — to warrant immediate rollback to the prior composite state? This decision belongs to the accountable human, not the on-call engineer. Provide the CSH diff, the behavioral specification sections being violated, and a severity assessment.
 3. If rollback: follow the Stage 4 behavioral rollback procedure documented in [agent-release-governance.md](agent-release-governance.md). Record the rollback in the version history. Conduct root cause analysis after the system is restored.
 4. If no rollback: root cause analysis as per quality incident, with the addition that all interactions during the out-of-spec period must be flagged for HITL review as a compliance measure, regardless of queue SLO impact.
@@ -386,12 +389,12 @@ All incidents require a post-incident review within five business days. The revi
 
 **Response.**
 
-1. Immediate escalation to the accountable human and the legal/risk team — within 30 minutes of detection. This is not a standard incident escalation; it is a parallel notification. The accountable human and legal/risk team are notified simultaneously, not sequentially.
+1. Immediate escalation to the accountable human and the legal/risk team — within a policy-set 30 minutes of detection. This is not a standard incident escalation; it is a parallel notification. The accountable human and legal/risk team are notified simultaneously, not sequentially.
 2. Legal hold on all relevant interaction traces, composite state manifests, and HITL records from the relevant period. Do not delete, modify, or archive anything from the affected period pending legal review.
-3. GDPR data subject rights assessment: does the affected user have rights that are triggered by this incident — right to be informed, right to erasure, or data breach notification obligation? This assessment must be completed within 72 hours.
+3. GDPR data subject rights assessment: does the affected user have rights that are triggered by this incident — right to be informed, right to erasure, or data breach notification obligation? This assessment must be completed within a policy-set 72 hours, a window chosen here to sit inside the applicable regulatory deadlines rather than taken from any one of them.
 4. User notification if required by the legal/risk assessment or by regulation.
 5. Full root cause analysis with the composite versioning incident investigation protocol.
-6. EU AI Act incident notification requirement assessment: Article 73 of the EU AI Act requires providers of high-risk AI systems to notify the relevant market surveillance authority of serious incidents. Assess whether this incident meets the threshold and act accordingly within the required notification window.
+6. EU AI Act incident notification requirement assessment: Article 73(1) of the EU AI Act requires the *provider* of a high-risk AI system to report any serious incident to the market surveillance authorities of the Member States where it occurred — providers, not "operators", which Article 3(8) defines as the far broader class of provider, product manufacturer, deployer, authorised representative, importer or distributor. Where the organisation is a *deployer* rather than the provider, its duty is Article 26(5): on identifying a serious incident, immediately inform first the provider, and then the importer or distributor and the relevant market surveillance authorities, with Article 73 applying *mutatis mutandis* only where the provider cannot be reached. Assess whether this incident meets the Article 3(49) threshold and file within the applicable Article 73 period, each of which is stated here with the case it governs: **not later than 15 days** after the provider or, where applicable, the deployer becomes aware, and immediately once a causal link or its reasonable likelihood is established, in the general case (Art. 73(2)); **not later than 10 days** after awareness where a person has died (Art. 73(4)); **not later than two days** after awareness for a widespread infringement or a serious and irreversible disruption of the management or operation of critical infrastructure under Article 3(49)(b) (Art. 73(3)). A fundamental-rights infringement is Article 3(49)(c) and runs on the general 15-day period, not the two-day one. All three clocks start from awareness of the incident, not from completion of this assessment, so the policy-set 30-minute and 72-hour internal windows above sit inside them and do not extend them.
 7. Post-incident review must include legal and risk stakeholders, not only operations and engineering.
 
 ### Persona Incident
@@ -402,7 +405,7 @@ All incidents require a post-incident review within five business days. The revi
 
 **Response.**
 
-1. Notification to the product owner within 2 hours.
+1. Notification to the product owner within a policy-set 2 hours.
 2. Forensic analysis of the composite state at the time of the incident: which model version, which prompt version? Was the persona definition in the prompt correctly assembled and delivered? Retrieve the reasoning trace if available.
 3. Scope assessment: is this an isolated incident, or is persona breakdown occurring across a class of inputs? Check the monitoring dashboard for persona consistency metric trends around the incident time.
 4. Remediation: prompt update (if the persona definition was malformed or insufficiently robust against the triggering input), model rollback (if a model update produced the persona deviation), or behavioral specification revision (if the persona definition itself was ambiguous in the triggering context). All three remediation paths require the behavioral evaluation re-run at minimum Layer 2 and Layer 3 before production application, per the recalibration gate in [agent-maintenance.md](agent-maintenance.md).
@@ -480,9 +483,9 @@ The four learning channels generate signals; those signals must translate to cor
 
 | Pattern severity | Max latency: HITL override → corrected production behavior |
 | --- | --- |
-| Critical behavioral pattern (recurring Critical-class incidents) | 14 calendar days |
-| High behavioral pattern (recurring High-class incidents or High red-team findings) | 30 calendar days |
-| Medium behavioral pattern | 90 calendar days |
+| Critical behavioral pattern (recurring Critical-class incidents) | 14 calendar days (policy-set) |
+| High behavioral pattern (recurring High-class incidents or High red-team findings) | 30 calendar days (policy-set) |
+| Medium behavioral pattern | 90 calendar days (policy-set) |
 | Low behavioral pattern | Next planned release cycle |
 
 **Measurement.** The end-to-end latency clock starts when the HITL override pattern is first identified (the point at which the evaluation gap signal or specification gap signal is created) and stops when the corrective change is confirmed live in production with a behavioral evaluation re-run demonstrating that the pattern no longer produces the failure.
@@ -566,7 +569,7 @@ For each reviewer, compute:
 
 | Condition | Consequence |
 | --- | --- |
-| Overall accuracy at or above defined threshold (example: 85%) | Authorized for operational assignments |
+| Overall accuracy at or above the locally defined threshold (85% is an illustrative figure, not a set threshold) | Authorized for operational assignments |
 | Category accuracy below threshold in a specific category | Restricted from assignments in that category pending remediation |
 | Calibration drift declining over last six cycles | Flagged for governance oversight review; mandatory calibration training before next assignment |
 
@@ -574,7 +577,7 @@ The threshold values are defined at deployment and documented in the governance 
 
 ### Calibration Training Protocol
 
-When a reviewer falls below threshold, calibration training consists of: review of the cases where their judgment diverged from the ground-truth consensus, expert explanation of the correct judgment rationale for each divergence, and re-assessment on a new calibration set (not the one on which they failed). The training cycle is completed within two weeks of the threshold failure. Re-assessment results are recorded and compared to the pre-training assessment to confirm that training produced measurable improvement.
+When a reviewer falls below threshold, calibration training consists of: review of the cases where their judgment diverged from the ground-truth consensus, expert explanation of the correct judgment rationale for each divergence, and re-assessment on a new calibration set (not the one on which they failed). The training cycle is completed within a policy-set two weeks of the threshold failure. Re-assessment results are recorded and compared to the pre-training assessment to confirm that training produced measurable improvement.
 
 ### Reviewer Calibration Records
 
@@ -590,7 +593,7 @@ The reviewer calibration set's ground-truth judgments are based on the behaviora
 
 **Specification version linkage.** Each calibration case carries a specification version tag: the version of the behavioral specification under which its ground-truth judgment was established. The tag is recorded in AGKB alongside the case content and the ground-truth judgment.
 
-**Mandatory audit after specification revision.** Within 30 days of any Stage 2 behavioral specification revision, the calibration set must be audited by the Behavioral Owner against the new specification version:
+**Mandatory audit after specification revision.** Within a policy-set 30 days of any Stage 2 behavioral specification revision, the calibration set must be audited by the Behavioral Owner against the new specification version:
 
 1. Each case is reviewed: does the correct answer under the new specification match the recorded ground-truth judgment?
 2. Cases whose correct answer has changed are updated (new ground-truth judgment established by the Behavioral Owner) or retired (the case tests behavior that no longer exists in the specification).
@@ -603,4 +606,4 @@ A calibration set that has not been audited following a specification revision m
 
 ---
 
-*See also: `aplc.md` (lifecycle overview), `agent-behavioral-specification.md` (behavioral baseline), `agent-behavioral-evaluation.md` (evaluation portfolio), `agent-composite-versioning.md` (CSH and incident investigation), `agent-release-governance.md` (Stage 4 rollback procedures), `agent-maintenance.md` (Stage 6, concurrent), `agent-retirement.md` (Stage 7 retirement trigger conditions). ASDLC reference: `asdlc/operations-governance.md` (service observability floor that this document extends).*
+*See also: `aplc.md` (lifecycle overview), `agent-behavioral-specification.md` (behavioral baseline), `agent-behavioral-evaluation.md` (evaluation portfolio), `agent-composite-versioning.md` (CSH and incident investigation), `agent-release-governance.md` (Stage 4 rollback procedures), `agent-maintenance.md` (Stage 6, concurrent), `agent-retirement.md` (Stage 7 retirement trigger conditions). ASDLC reference: `asdlc/operations/governance.md` (service observability floor that this document extends).*

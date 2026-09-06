@@ -28,13 +28,14 @@ Each framework is independently useful. Together they form a complete governance
 
 ## Why the APLC Exists
 
-Software delivery has the ASDLC. AI model development has model governance frameworks. But agent products — systems that behave, that interact with users, that make decisions on their behalf — fall between those two worlds. They are neither pure software nor pure models. They are *composite systems* whose behavior is determined by five components simultaneously:
+Software delivery has the ASDLC. AI model development has model governance frameworks. But agent products — systems that behave, that interact with users, that make decisions on their behalf — fall between those two worlds. They are neither pure software nor pure models. They are *composite systems* whose behavior is determined by six components simultaneously:
 
 - the application code
 - the system prompt
 - the foundation model
 - the knowledge base
 - the memory state
+- the tool manifest
 
 Change any one of these — including changes made by the model provider without your team's intervention — and the behavioral identity of the product changes. The APLC governs that composite system throughout its operational life.
 
@@ -46,7 +47,7 @@ The paradigm shift is real, and it has governance implications at every level:
 | What you test | Deterministic pass/fail | Probabilistic behavioral coverage + red-teaming |
 | What drifts | Nothing (code doesn't change itself) | Everything (model updates, memory, knowledge staleness) |
 | What incidents look like | Crashes, outages, bugs | Hallucinations, persona breaks, adversarial manipulation |
-| What "version" means | A single artifact hash | A composite state hash across five components |
+| What "version" means | A single artifact hash | A composite state hash across six components |
 | Regulatory exposure | Process-level (how you built it) | Product-level (what it is and what it does) |
 
 The APLC exists to make this paradigm shift governable.
@@ -107,7 +108,7 @@ These concepts have no direct analog in software delivery governance. Understand
 
 ### 1. Composite Agent State and the CSH
 
-An agent product's behavioral identity is determined by five components simultaneously: application code, system prompt, foundation model, knowledge base, and memory state. The **Composite State Hash (CSH)** is a hash over all five component identifiers. When *any* component changes — including a model update you did not initiate — the CSH changes, and a new composite state manifest must be filed. Every production interaction is associated with the CSH active at the time, so any behavioral deviation can be traced to exactly which component changed and when.
+An agent product's behavioral identity is determined by six components simultaneously: application code, system prompt, foundation model, knowledge base, memory state, and tool manifest (see [`agent/agent-composite-versioning.md`](agent/agent-composite-versioning.md) for the full specification of all six, including the tool manifest's silent-tool-update detection). The **Composite State Hash (CSH)** is a hash over all six component identifiers. When *any* component changes — including a model update you did not initiate — the CSH changes, and a new composite state manifest must be filed. Every production interaction is associated with the CSH active at the time, so any behavioral deviation can be traced to exactly which component changed and when.
 
 ### 2. Behavioral Drift
 
@@ -149,7 +150,7 @@ The APLC is a toolkit, not a sequential adoption mandate. Adopt it where your pa
 
 **Foundation-model updates are silently changing your agent's behavior** → **Stage 6 (Maintain)**. Implement foundation-model update governance: detect updates via CSH monitoring, test them against the behavioral evaluation portfolio, and make an explicit accept-or-reject decision before letting an update through to production. The default is reject unless the regression suite passes — not accept unless something obviously breaks. See [`agent/agent-maintenance.md`](agent/agent-maintenance.md).
 
-**You are about to deploy an agent for the first time** → **Stage 3 evaluation and the Behavioral Release Gate**. Run the four-layer evaluation portfolio (engineering, probabilistic behavioral coverage, adversarial red-team, human preference) and pass the seven release-gate conditions before deployment. File the composite state manifest. See [`agent/agent-behavioral-evaluation.md`](agent/agent-behavioral-evaluation.md) and [`agent/agent-release-governance.md`](agent/agent-release-governance.md).
+**You are about to deploy an agent for the first time** → **Stage 3 evaluation and the Behavioral Release Gate**. Run the four-layer evaluation portfolio (engineering, probabilistic behavioral coverage, adversarial red-team, human preference) and pass the eleven release-gate conditions before deployment (agent-release-governance.md). File the composite state manifest. See [`agent/agent-behavioral-evaluation.md`](agent/agent-behavioral-evaluation.md) and [`agent/agent-release-governance.md`](agent/agent-release-governance.md).
 
 **You are scoping a new agent product from scratch** → **Stage 1 (Conceive)**. Define the agent product, the trust architecture, the persona, and the EU AI Act regulatory classification before any specification work begins. Nothing in Stage 2 can be correctly specified without a complete Stage 1 — every behavioral requirement traces back here. See [`agent/agent-conception.md`](agent/agent-conception.md).
 
@@ -179,7 +180,7 @@ The APLC is not all-or-nothing. The guide defines minimum viable governance at e
 | [`agent-behavioral-specification.md`](agent/agent-behavioral-specification.md) | Stage 2 | Four-layer behavioral envelope, use-case coverage map, uncertainty protocol, machine-executable specification model |
 | [`agent-behavioral-evaluation.md`](agent/agent-behavioral-evaluation.md) | Stage 3 | Four-layer evaluation portfolio, red-team protocol, human evaluation workflow, adaptive coverage, continuous red-team |
 | [`aplc-stage3-inner-loop.md`](aplc-stage3-inner-loop.md) | Stage 3 | Stage 3 inner loop behavioral interpretation, Agentic Definition of Done |
-| [`agent-release-governance.md`](agent/agent-release-governance.md) | Stage 4 | Seven behavioral release gate conditions, composite state manifest, canary deployment, rollback governance |
+| [`agent-release-governance.md`](agent/agent-release-governance.md) | Stage 4 | Eleven behavioral release gate conditions, composite state manifest, canary deployment, rollback governance |
 | [`agent-operations.md`](agent/agent-operations.md) | Stage 5 | Behavioral observability, drift detection, HITL management, incident classification, HITL four-channel learning |
 | [`agent-maintenance.md`](agent/agent-maintenance.md) | Stage 6 | Recalibration cycles, foundation model update governance, knowledge base governance, GDPR memory erasure |
 | [`agent-retirement.md`](agent/agent-retirement.md) | Stage 7 | Retirement triggers, user migration, lessons extraction, retirement vs. recalibrate decision framework |
@@ -191,6 +192,9 @@ The APLC is not all-or-nothing. The guide defines minimum viable governance at e
 | [`agent-composite-versioning.md`](agent/agent-composite-versioning.md) | Composite State Hash, manifest format, behavioral fingerprint, memory state snapshot policy |
 | [`agent-portfolio-governance.md`](agent/agent-portfolio-governance.md) | Portfolio-level governance: registry, foundation model epidemic surveillance, multi-agent interaction governance |
 | [`agent-finops-governance.md`](agent/agent-finops-governance.md) | APLC FinOps governance: cost attribution, FinOps metrics, stage-by-stage economics |
+| [`agent-human-oversight.md`](agent/agent-human-oversight.md) | Four human oversight patterns (HITL, HOTL, HOLL, EDL), pattern decision framework, transition protocol |
+| [`agent-annex-iv-mapping.md`](agent/agent-annex-iv-mapping.md) | EU AI Act Annex IV documentation mapping for high-risk agent products, coverage gaps, supplementary documentation |
+| [`initiative-authorization-gate.md`](initiative-authorization-gate.md) | Initiative Authorization Gate: parallel to the Stage 4 Release Gate, per-domain × per-action-class authorisation |
 | [`waiver-governance.md`](waiver-governance.md) | Governance waiver process for gate condition exceptions |
 
 ### Governance Agent Framework
@@ -199,7 +203,7 @@ The APLC is not all-or-nothing. The guide defines minimum viable governance at e
 | --- | --- |
 | [`governance/knowledge-base.md`](governance/knowledge-base.md) | APLC Governance Knowledge Base architecture, schemas, access control, retrieval interface |
 | [`governance/agents.md`](governance/agents.md) | Ten APLC Governance Agents with full specifications, autonomy tiers, and evaluation requirements |
-| [`governance/tool-stack.md`](governance/tool-stack.md) | Twelve governance tools with per-agent access control matrix |
+| [`governance/tool-stack.md`](governance/tool-stack.md) | Thirteen governance tools (T01–T13) with per-agent access control matrix |
 | [`governance/observability.md`](governance/observability.md) | Governance process observability: health metrics, anomaly detection, SLAs, audit trail |
 | [`governance/queries.md`](governance/queries.md) | Canonical governance query library: 25 structured queries (GQ-01 through GQ-25) across all lifecycle stages |
 
@@ -229,4 +233,4 @@ The **ASDLC** governs software delivery. The APLC governs agent product delivery
 
 ---
 
-*The APLC is part of the Agentic Engineering Manifesto ecosystem. See also: manifesto (engineering principles), ASDLC (software delivery lifecycle), [`aplc.md`](aplc.md) (full lifecycle architecture).*
+*The APLC is part of the Agentic Engineering Manifesto ecosystem. See also: manifesto (engineering principles), ASDLC (software delivery lifecycle), [`aplc.md`](aplc.md) (full lifecycle architecture). See [errata.md](errata.md) for a dated record of corrections made to previously published content.*
